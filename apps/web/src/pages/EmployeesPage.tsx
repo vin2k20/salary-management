@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { errorMessage } from '../api/errors.ts';
 import { Alert } from '../components/ui/alert.tsx';
 import { Button } from '../components/ui/button.tsx';
-import { Select } from '../components/ui/select.tsx';
+import { Label } from '../components/ui/label.tsx';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select.tsx';
 import { formatRateDate } from '../currency/rates.ts';
 import { DirectoryFilters } from '../employees/DirectoryFilters.tsx';
 import { EmployeeTable } from '../employees/EmployeeTable.tsx';
@@ -75,22 +82,28 @@ export function EmployeesPage() {
             }}
           />
           <nav aria-label="Pages" className="mt-4 flex items-center justify-between text-sm">
-            <label className="flex items-center gap-2">
-              Rows per page
+            <div className="flex items-center gap-2">
+              <Label htmlFor="rows-per-page" className="font-normal">
+                Rows per page
+              </Label>
               <Select
-                className="w-20"
                 value={String(query.pageSize)}
-                onChange={(event) => {
-                  update({ pageSize: event.target.value });
+                onValueChange={(pageSize) => {
+                  update({ pageSize });
                 }}
               >
-                {[25, 50, 100].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
+                <SelectTrigger id="rows-per-page" className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {['25', '50', '100'].map((size) => (
+                    <SelectItem key={size} value={size}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
-            </label>
+            </div>
             <div className="flex items-center gap-2">
               <span>
                 Page {query.page} of {numberFormat.format(lastPage)}

@@ -8,6 +8,8 @@ import { useReferenceData } from './api.ts';
 import { EMPLOYMENT_TYPE_LABELS } from './labels.ts';
 import type { DirectoryKey } from './useDirectoryQuery.ts';
 
+const asOptions = (values: string[]) => values.map((value) => ({ value, label: value }));
+
 /**
  * Filters for the directory; every change goes into the URL. The search box starts from the URL;
  * the page remounts this component when filters are cleared.
@@ -58,79 +60,60 @@ export function DirectoryFilters({
         <SelectField
           id="directory-country"
           label="Country"
+          emptyLabel="All countries"
           value={query.country ?? ''}
-          onChange={(event) => {
-            update({ country: event.target.value, region: undefined });
+          onValueChange={(country) => {
+            update({ country, region: undefined });
           }}
-        >
-          <option value="">All countries</option>
-          {reference.data?.countries.map((country) => (
-            <option key={country.code} value={country.code}>
-              {country.name}
-            </option>
-          ))}
-        </SelectField>
+          options={(reference.data?.countries ?? []).map((country) => ({
+            value: country.code,
+            label: country.name,
+          }))}
+        />
       )}
       <SelectField
         id="directory-region"
         label="Region"
+        emptyLabel="All regions"
         value={query.region ?? ''}
-        onChange={(event) => {
-          update({ region: event.target.value });
+        onValueChange={(region) => {
+          update({ region });
         }}
-      >
-        <option value="">All regions</option>
-        {regions.map((region) => (
-          <option key={`${region.countryCode}-${region.name}`} value={region.name}>
-            {region.name}
-          </option>
-        ))}
-      </SelectField>
+        options={asOptions([...new Set(regions.map((region) => region.name))])}
+      />
       <SelectField
         id="directory-department"
         label="Department"
+        emptyLabel="All departments"
         value={query.department ?? ''}
-        onChange={(event) => {
-          update({ department: event.target.value });
+        onValueChange={(department) => {
+          update({ department });
         }}
-      >
-        <option value="">All departments</option>
-        {reference.data?.departments.map((department) => (
-          <option key={department} value={department}>
-            {department}
-          </option>
-        ))}
-      </SelectField>
+        options={asOptions(reference.data?.departments ?? [])}
+      />
       <SelectField
         id="directory-job-title"
         label="Job title"
+        emptyLabel="All job titles"
         value={query.jobTitle ?? ''}
-        onChange={(event) => {
-          update({ jobTitle: event.target.value });
+        onValueChange={(jobTitle) => {
+          update({ jobTitle });
         }}
-      >
-        <option value="">All job titles</option>
-        {reference.data?.jobTitles.map((title) => (
-          <option key={title} value={title}>
-            {title}
-          </option>
-        ))}
-      </SelectField>
+        options={asOptions(reference.data?.jobTitles ?? [])}
+      />
       <SelectField
         id="directory-employment-type"
         label="Employment type"
+        emptyLabel="All types"
         value={query.employmentType ?? ''}
-        onChange={(event) => {
-          update({ employmentType: event.target.value });
+        onValueChange={(employmentType) => {
+          update({ employmentType });
         }}
-      >
-        <option value="">All types</option>
-        {EMPLOYMENT_TYPES.map((type) => (
-          <option key={type} value={type}>
-            {EMPLOYMENT_TYPE_LABELS[type]}
-          </option>
-        ))}
-      </SelectField>
+        options={EMPLOYMENT_TYPES.map((type) => ({
+          value: type,
+          label: EMPLOYMENT_TYPE_LABELS[type],
+        }))}
+      />
       <div className="flex items-end gap-4">
         <label className="flex items-center gap-2 text-sm">
           <input
