@@ -47,11 +47,13 @@ Prerequisites: Node.js 24 (see `.nvmrc`; with nvm, run `nvm use`) and npm 11.
 
 ```bash
 npm install
+cp apps/api/.env.example apps/api/.env   # then set DATABASE_URL
+npm run db:migrate -w @salary/api
 npm run check
 npm run dev
 ```
 
-`npm run dev` starts the API on http://localhost:3000 and the web app on http://localhost:5173. Open the web app: the home page shows whether the API is available. Stop both with Ctrl+C.
+`npm run dev` starts the API on http://localhost:3000 and the web app on http://localhost:5173. Open the web app: the home page shows whether the API and the database are available. Stop both with Ctrl+C.
 
 `npm run check` runs lint, the format check, the type check and all tests. Other root scripts:
 
@@ -71,6 +73,7 @@ The API reads its settings from environment variables and stops at start-up if a
 
 | Variable | Default | Purpose |
 |---|---|---|
+| `DATABASE_URL` | none, required | PostgreSQL connection string. Locally, the pooled string of your Neon development branch (or a local PostgreSQL database), ending in `sslmode=verify-full` for Neon |
 | `PORT` | `3000` | Port the API listens on |
 | `LOG_LEVEL` | `info` | pino log level: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 
@@ -78,11 +81,20 @@ If the API runs on another port, start the web app with `API_PROXY_TARGET` set, 
 
 ## Database and seed data
 
-To be completed in steps 05 and 06.
+PostgreSQL, accessed with Drizzle ORM. The schema is defined in `apps/api/src/db/schema.ts`, and every change is a versioned SQL migration in `apps/api/drizzle/`.
+
+| Script | What it does |
+|---|---|
+| `npm run db:migrate -w @salary/api` | Apply pending migrations to the database in `DATABASE_URL`. Safe to run again. |
+| `npm run db:generate -w @salary/api` | Write a new migration after changing the schema. Review the SQL before committing it. |
+
+The migrations also load the reference data: the four countries and their currencies, the eight pay frequencies and the system pay components per country. Pay totals come from the `current_pay_totals` view, built on the `pay_totals_on(date)` function, which adds up the pay items that apply on a date as annual amounts in local currency.
+
+Seed data for 10,000 employees is added in step 06.
 
 ## Tests
 
-Each workspace uses Vitest, with test files next to the code they test (`*.test.ts`). Run all tests with `npm test`, or one workspace with `npm test -w @salary/api`. Test types are added as the build goes on: API tests with Supertest and PGlite, UI tests with React Testing Library, and a Playwright smoke test.
+Each workspace uses Vitest, with test files next to the code they test (`*.test.ts`). Run all tests with `npm test`, or one workspace with `npm test -w @salary/api`. API and database tests run against PGlite, PostgreSQL in memory: each test file gets a fresh database with every migration applied, so tests need no running database or network. UI tests use React Testing Library, and a Playwright smoke test comes later.
 
 GitHub Actions runs lint, the format check, the type check, all tests and the build on every push and on every pull request to `main` (`.github/workflows/ci.yml`).
 
@@ -101,7 +113,8 @@ How it fits together:
 - The browser only talks to the Vercel domain. Vercel serves the web app and rewrites `/api/*` to the Render API, so the auth cookie stays first-party and no CORS setup is needed.
 - A merge to `main` deploys both parts. Vercel builds the web app. Render deploys the API only after the CI workflow has passed on the commit, and only when API, shared or root package files change.
 - Each pull request gets a Vercel preview deployment. Previews need a Vercel login and call the production API.
-- The Render service runs `node apps/api/src/server.ts` after `npm ci --omit=dev`, with a health check on `/api/health`. Render sets `PORT`; `NODE_ENV` and `LOG_LEVEL` come from `render.yaml`. Secrets added in later steps are set in the Render dashboard and never committed.
+- The Render build runs `npm ci --omit=dev` and then applies database migrations, so they run before the new version starts. A failed migration fails the deploy and the running version stays up.
+- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV` and `LOG_LEVEL` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch) and later secrets are set in the Render dashboard and never committed.
 - The free Render service sleeps after 15 minutes without traffic and takes about a minute to wake. Open the app a few minutes before a demo.
 
 ## Demo
