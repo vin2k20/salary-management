@@ -1,10 +1,12 @@
 import { createApp } from './app.ts';
 import { loadConfig } from './config.ts';
+import { createDatabase } from './db/client.ts';
 import { createLogger } from './logger.ts';
 
 const config = loadConfig(process.env);
 const logger = createLogger(config.logLevel);
-const app = createApp({ logger });
+const database = createDatabase(config.databaseUrl);
+const app = createApp({ logger, db: database.db });
 
 const server = app.listen(config.port, (error) => {
   if (error) {
@@ -17,6 +19,8 @@ const server = app.listen(config.port, (error) => {
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {
     logger.info({ signal }, 'API shutting down');
-    server.close(() => process.exit(0));
+    server.close(() => {
+      void database.close().finally(() => process.exit(0));
+    });
   });
 }

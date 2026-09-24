@@ -10,17 +10,28 @@ export function HomePage() {
   });
 
   let apiStatus = 'Unavailable';
-  if (health.isPending) apiStatus = 'Checking...';
-  else if (health.isSuccess) apiStatus = 'Available';
+  let databaseStatus = 'Unknown';
+  if (health.isPending) {
+    apiStatus = 'Checking...';
+    databaseStatus = 'Checking...';
+  } else if (health.isSuccess) {
+    apiStatus = 'Available';
+    databaseStatus = health.data.database === 'ok' ? 'Available' : 'Unavailable';
+  }
 
   return (
     <>
       <h1>Salary Management</h1>
       <section aria-labelledby="system-status-heading">
         <h2 id="system-status-heading">System status</h2>
-        <p role="status">
-          API: <strong>{apiStatus}</strong>
-        </p>
+        <ul role="status" className="status-list">
+          <li>
+            API: <strong>{apiStatus}</strong>
+          </li>
+          <li>
+            Database: <strong>{databaseStatus}</strong>
+          </li>
+        </ul>
       </section>
     </>
   );
