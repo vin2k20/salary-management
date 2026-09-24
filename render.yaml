@@ -1,0 +1,27 @@
+# Render Blueprint for the API: free plan, in the same region as the Neon database (AWS us-east-2).
+services:
+  - type: web
+    name: acme-salary-api
+    runtime: node
+    plan: free
+    region: ohio
+    branch: main
+    buildCommand: npm ci --omit=dev
+    # Node.js 24 runs the TypeScript source directly (decision D39).
+    startCommand: node apps/api/src/server.ts
+    healthCheckPath: /api/health
+    # Deploy only after the CI workflow has passed on the commit.
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/shared/**
+        - package.json
+        - package-lock.json
+        - .nvmrc
+        - render.yaml
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
