@@ -3,18 +3,20 @@ import { vi } from 'vitest';
 type Handler = (request: { body: unknown }) => Response | Promise<Response>;
 
 /**
- * Replaces fetch with handlers keyed by "METHOD /path". Unknown requests get a 404, and every
- * call is recorded so tests can check what was sent.
+ * Replaces fetch with handlers keyed by "METHOD /path", matched without the query string. Unknown
+ * requests get a 404, and every call is recorded with its query so tests can check what was sent.
  */
 export function mockApi(handlers: Record<string, Handler>) {
-  const calls: { method: string; path: string; body: unknown }[] = [];
+  const calls: { method: string; path: string; query: string; body: unknown }[] = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const path =
-      typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
+    const url = new URL(
+      typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+      'http://localhost',
+    );
     const method = (init?.method ?? 'GET').toUpperCase();
     const body: unknown = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
-    calls.push({ method, path, body });
-    const handler = handlers[`${method} ${path}`];
+    calls.push({ method, path: url.pathname, query: url.search, body });
+    const handler = handlers[`${method} ${url.pathname}`];
     return handler ? handler({ body }) : Response.json({ status: 404 }, { status: 404 });
   });
   vi.stubGlobal('fetch', fetchMock);
