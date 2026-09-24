@@ -1,8 +1,11 @@
 import {
+  CHANGE_LOG_ACTIONS,
+  CHANGE_LOG_ENTITY_TYPES,
   EMPLOYEE_STATUSES,
   EMPLOYMENT_TYPES,
   PAY_CHANGE_REASONS,
   PAY_COMPONENT_CATEGORIES,
+  type FieldChanges,
 } from '@salary/shared';
 import { sql } from 'drizzle-orm';
 import {
@@ -11,6 +14,7 @@ import {
   char,
   check,
   date,
+  index,
   jsonb,
   numeric,
   pgTable,
@@ -209,5 +213,33 @@ export const fxRates = pgTable(
   (table) => [
     primaryKey({ columns: [table.currencyCode, table.rateDate] }),
     check('fx_rates_units_per_usd_check', sql`${table.unitsPerUsd} > 0`),
+  ],
+);
+
+/**
+ * Every change to employees, pay, pay components and users, written in the same transaction as
+ * the change and never edited. The country allows scope filtering for country HR users.
+ */
+export const changeLog = pgTable(
+  'change_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    entityType: text('entity_type', { enum: CHANGE_LOG_ENTITY_TYPES }).notNull(),
+    entityId: uuid('entity_id').notNull(),
+    action: text('action', { enum: CHANGE_LOG_ACTIONS }).notNull(),
+    changes: jsonb('changes').$type<FieldChanges>().notNull(),
+    countryCode: char('country_code', { length: 2 }).references(() => countries.code),
+    // References users from step 07.
+    changedBy: uuid('changed_by'),
+    // Set from the application clock, so tests control it.
+    changedAt: timestamp('changed_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    check(
+      'change_log_entity_type_check',
+      sql`${table.entityType} in ${allowedValues(CHANGE_LOG_ENTITY_TYPES)}`,
+    ),
+    check('change_log_action_check', sql`${table.action} in ${allowedValues(CHANGE_LOG_ACTIONS)}`),
+    index('change_log_entity_idx').on(table.entityType, table.entityId, table.changedAt),
   ],
 );

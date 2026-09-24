@@ -29,3 +29,10 @@ export {
   type EmploymentType,
 } from './employees.ts';
 export { PAY_CHANGE_REASONS, type PayChangeReason } from './pay-changes.ts';
+export {
+  CHANGE_LOG_ACTIONS,
+  CHANGE_LOG_ENTITY_TYPES,
+  type ChangeLogAction,
+  type ChangeLogEntityType,
+  type FieldChanges,
+} from './change-log.ts';
