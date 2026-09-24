@@ -6,6 +6,7 @@ import { errorMessage } from '../api/errors.ts';
 import { Alert } from '../components/ui/alert.tsx';
 import { Button, ButtonLink } from '../components/ui/button.tsx';
 import { Card, CardContent } from '../components/ui/card.tsx';
+import { EmployeeChangeLog } from '../employees/EmployeeChangeLog.tsx';
 import { EmployeeDetails } from '../employees/EmployeeDetails.tsx';
 import { MarkInactivePanel } from '../employees/MarkInactivePanel.tsx';
 import { employeeSaved, updateEmployee, useEmployee } from '../employees/api.ts';
@@ -118,6 +119,17 @@ export function EmployeePage() {
                   Details
                 </h2>
                 <EmployeeDetails employee={data} />
+              </section>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardContent className="pt-6">
+              <section aria-labelledby="change-log-heading">
+                <h2 id="change-log-heading" className="mb-4 text-lg font-medium">
+                  Change log
+                </h2>
+                <EmployeeChangeLog employeeId={data.id} />
               </section>
             </CardContent>
           </Card>
