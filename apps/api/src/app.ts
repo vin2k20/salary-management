@@ -10,6 +10,7 @@ import { requestLogger } from './http/request-logger.ts';
 import { authRouter, type AuthSettings } from './modules/auth/auth.routes.ts';
 import { requireAuth } from './modules/auth/require-auth.ts';
 import { healthRouter } from './modules/health/health.routes.ts';
+import { usersRouter } from './modules/users/users.routes.ts';
 
 export interface AppDependencies {
   logger: Logger;
@@ -47,6 +48,7 @@ export function createApp({
 
   // Everything else under /api needs a session, so unknown paths answer 401 before 404.
   app.use('/api', requireAuth({ db, clock, jwtSecret: auth.jwtSecret }));
+  app.use('/api/users', usersRouter({ db, clock, emailSender, appUrl }));
 
   app.use(notFoundHandler());
   app.use(errorHandler());
