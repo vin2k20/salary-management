@@ -10,5 +10,9 @@
     "packages/shared",
     "apps/api",
     "apps/web"
-  ]
+  ],
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "typescript": "~6.0.3"
+  }
 }
