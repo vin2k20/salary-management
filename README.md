@@ -130,6 +130,18 @@ Every run also creates or updates the demo HR users, all with the password in `S
 
 The load runs in one transaction, so a failed run changes nothing. Against the Neon development branch it takes about 45 seconds.
 
+## User management
+
+Global HR users manage HR users on the Users page:
+
+- **Add a user** with a name, email, role and, for country HR users, their country. The user gets an invite email with a link to choose a password (valid 72 hours). If the email cannot be sent, the user is still saved and the page says so.
+- **Edit** a user's name, role or country. A country HR user always has one country; a global HR user has none.
+- **Resend invite** to a user who has not set a password yet.
+- **Deactivate** a user, which signs them out at once and stops them signing in, or reactivate them. Users are never deleted.
+- Nobody can deactivate themselves or change their own role, so the organisation cannot lose its last global HR user by mistake.
+
+Every change is written to the change log with who made it (`GET /api/users/:id/change-log`). Country HR users cannot see or use these endpoints (403).
+
 ## Password reset and invites
 
 - **Forgot password:** the sign-in page links to a form that emails a reset link. The API answers the same way whether or not the email has an account, and sends at most three links per email in 15 minutes.
