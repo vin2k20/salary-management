@@ -63,6 +63,7 @@ export async function changeLogFor(
   const rows = await db
     .select({
       id: changeLog.id,
+      entityType: changeLog.entityType,
       action: changeLog.action,
       changes: changeLog.changes,
       changedAt: changeLog.changedAt,
@@ -81,6 +82,7 @@ export async function changeLogFor(
     .orderBy(desc(changeLog.changedAt));
   return rows.map((row) => ({
     id: row.id,
+    entityType: row.entityType,
     action: row.action,
     changes: row.changes,
     changedAt: row.changedAt.toISOString(),

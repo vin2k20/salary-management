@@ -27,6 +27,7 @@ const changeLog = {
   items: [
     {
       id: '33333333-3333-4333-8333-333333333333',
+      entityType: 'employee',
       action: 'updated',
       changes: {
         jobTitle: { old: 'Software Engineer', new: 'Senior Software Engineer' },
@@ -38,6 +39,7 @@ const changeLog = {
     },
     {
       id: '44444444-4444-4444-8444-444444444444',
+      entityType: 'employee',
       action: 'created',
       changes: { firstName: { old: null, new: 'Maria' } },
       changedAt: '2024-04-01T08:00:00.000Z',

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ROLES, emailSchema } from './auth.ts';
-import { CHANGE_LOG_ACTIONS } from './change-log.ts';
+import { CHANGE_LOG_ACTIONS, CHANGE_LOG_ENTITY_TYPES } from './change-log.ts';
 import { countryCodeSchema } from './countries.ts';
 
 /** Invited users have not set a password yet; inactive users cannot sign in. */
@@ -100,6 +100,8 @@ export type CreateUserResponse = z.infer<typeof createUserResponseSchema>;
 
 export const changeLogEntrySchema = z.object({
   id: z.uuid(),
+  /** The kind of record that changed, such as the employee or one of their pay changes. */
+  entityType: z.enum(CHANGE_LOG_ENTITY_TYPES),
   action: z.enum(CHANGE_LOG_ACTIONS),
   changes: z.record(z.string(), z.object({ old: z.unknown(), new: z.unknown() })),
   changedAt: z.iso.datetime(),
