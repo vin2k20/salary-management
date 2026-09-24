@@ -58,6 +58,6 @@ Run from the repository root. Node.js 24 is required (`.nvmrc`).
 - `npm run format` / `npm run format:check`: Prettier (Markdown files are not formatted).
 - `npm run typecheck`: TypeScript in every workspace.
 - `npm test`: Vitest in every workspace.
-- `npm run build`: build every workspace that has a build script.
-- `npm run dev`: start every workspace that has a dev script.
+- `npm run dev`: start the API (port 3000) and the web app (port 5173) in watch mode.
+- `npm run build`: build the web app. The API runs from its TypeScript source and has no build.
 - Run one workspace with `-w`, for example `npm test -w @salary/api`.
