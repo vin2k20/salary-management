@@ -1,5 +1,6 @@
 import { STATUS_CODES } from 'node:http';
 import type { ErrorRequestHandler, RequestHandler, Response } from 'express';
+import { HttpError, RequestValidationError, type FieldError } from './errors.ts';
 
 /** Error response body in the problem details format (RFC 9457). */
 export interface ProblemDetails {
@@ -9,6 +10,8 @@ export interface ProblemDetails {
   detail?: string;
   instance: string;
   requestId?: string;
+  /** Validation errors, one per field. */
+  errors?: FieldError[];
 }
 
 const clientErrorDetails: Record<string, string> = {
@@ -49,6 +52,15 @@ export function errorHandler(): ErrorRequestHandler {
   return (error: unknown, req, res, next) => {
     if (res.headersSent) {
       next(error);
+      return;
+    }
+
+    if (error instanceof RequestValidationError) {
+      sendProblem(res, { ...problem(400, req.path, error.message), errors: error.errors });
+      return;
+    }
+    if (error instanceof HttpError) {
+      sendProblem(res, problem(error.status, req.path, error.message));
       return;
     }
 

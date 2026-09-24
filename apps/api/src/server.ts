@@ -1,4 +1,5 @@
 import { createApp } from './app.ts';
+import { systemClock } from './clock.ts';
 import { loadConfig } from './config.ts';
 import { createDatabase } from './db/client.ts';
 import { createLogger } from './logger.ts';
@@ -6,7 +7,12 @@ import { createLogger } from './logger.ts';
 const config = loadConfig(process.env);
 const logger = createLogger(config.logLevel);
 const database = createDatabase(config.databaseUrl);
-const app = createApp({ logger, db: database.db });
+const app = createApp({
+  logger,
+  db: database.db,
+  clock: systemClock,
+  auth: { jwtSecret: config.jwtSecret, secureCookies: config.nodeEnv === 'production' },
+});
 
 const server = app.listen(config.port, (error) => {
   if (error) {

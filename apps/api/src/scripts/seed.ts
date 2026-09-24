@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util';
-import { loadConfig } from '../config.ts';
+import { loadScriptConfig } from '../config.ts';
 import { createDatabase } from '../db/client.ts';
 import { createLogger } from '../logger.ts';
 import { DEFAULT_SEED_OPTIONS, seedDatabase } from '../seed/seed-database.ts';
@@ -13,7 +13,7 @@ const { values } = parseArgs({
   },
 });
 
-const config = loadConfig(process.env);
+const config = loadScriptConfig(process.env);
 const logger = createLogger(config.logLevel);
 const { db, close } = createDatabase(config.databaseUrl);
 const options = {
