@@ -1,4 +1,4 @@
-import { fxRatesResponseSchema } from '@salary/shared';
+import { fxRatesResponseSchema, fxRefreshResponseSchema } from '@salary/shared';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../api/client.ts';
 import { formatDate } from '../lib/format.ts';
@@ -16,3 +16,8 @@ export function useFxRates() {
 
 /** "2026-09-24" as "24 Sep 2026". */
 export const formatRateDate = formatDate;
+
+/** Asks the API to fetch the latest rates now (global HR users only). */
+export function refreshRates() {
+  return apiRequest('/api/fx-rates/refresh', fxRefreshResponseSchema, { method: 'POST' });
+}
