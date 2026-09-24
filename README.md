@@ -4,7 +4,9 @@
 
 A web application where global and country HR managers maintain pay data for 10,000 employees in India, the USA, Canada and Australia, and see how the organisation pays people on a dashboard.
 
-Status: walking skeleton running locally, features not started. This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
+Status: walking skeleton deployed, features not started.
+
+Live app: https://acme-salary-management.vercel.app (the first request after a quiet period can take about a minute while the free API service wakes up). This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
 
 ## Overview
 
@@ -25,7 +27,7 @@ Full scope: [requirements](docs/requirements.md).
 - **Web app** (`apps/web`): a React single page app built with Vite. It calls the API under `/api` on its own origin: through the Vite proxy in development and a Vercel rewrite in production, so the auth cookie stays first-party and no CORS setup is needed.
 - **API** (`apps/api`): a stateless Express 5 service. Node.js 24 runs its TypeScript source directly, with no build step. Every request gets an ID, returned in the `X-Request-Id` header and written on every log line. Errors use the problem details format (RFC 9457) and include the request ID.
 - **Shared package** (`packages/shared`): Zod schemas and types used by both the API and the web app.
-- **Database** (from step 05): PostgreSQL on Neon.
+- **Database** (from step 05): PostgreSQL on Neon, in the same AWS region as the API.
 
 Full details are in the [high level design](docs/high-level-design.md).
 
@@ -86,7 +88,21 @@ GitHub Actions runs lint, the format check, the type check, all tests and the bu
 
 ## Deployment
 
-To be completed in step 04.
+Every service runs on its free plan.
+
+| Part | Service | Address | Configuration |
+|---|---|---|---|
+| Web app | Vercel (Hobby) | https://acme-salary-management.vercel.app | `vercel.json` |
+| API | Render free web service, Ohio | https://acme-salary-api-oxu3.onrender.com | `render.yaml` |
+| Database (from step 05) | Neon free plan, AWS us-east-2 (Ohio) | Connection string in Render settings only | |
+
+How it fits together:
+
+- The browser only talks to the Vercel domain. Vercel serves the web app and rewrites `/api/*` to the Render API, so the auth cookie stays first-party and no CORS setup is needed.
+- A merge to `main` deploys both parts. Vercel builds the web app. Render deploys the API only after the CI workflow has passed on the commit, and only when API, shared or root package files change.
+- Each pull request gets a Vercel preview deployment. Previews need a Vercel login and call the production API.
+- The Render service runs `node apps/api/src/server.ts` after `npm ci --omit=dev`, with a health check on `/api/health`. Render sets `PORT`; `NODE_ENV` and `LOG_LEVEL` come from `render.yaml`. Secrets added in later steps are set in the Render dashboard and never committed.
+- The free Render service sleeps after 15 minutes without traffic and takes about a minute to wake. Open the app a few minutes before a demo.
 
 ## Demo
 
