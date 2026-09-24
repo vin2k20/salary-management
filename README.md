@@ -47,14 +47,14 @@ Prerequisites: Node.js 24 (see `.nvmrc`; with nvm, run `nvm use`) and npm 11.
 
 ```bash
 npm install
-cp apps/api/.env.example apps/api/.env   # then set DATABASE_URL
+cp apps/api/.env.example apps/api/.env   # then set DATABASE_URL, JWT_SECRET and SEED_HR_PASSWORD
 npm run db:migrate -w @salary/api
 npm run db:seed -w @salary/api
 npm run check
 npm run dev
 ```
 
-`npm run dev` starts the API on http://localhost:3000 and the web app on http://localhost:5173. Open the web app: the home page shows whether the API and the database are available. Stop both with Ctrl+C.
+`npm run dev` starts the API on http://localhost:3000 and the web app on http://localhost:5173. Open the web app and sign in as one of the demo HR users (below) with the password you set in `SEED_HR_PASSWORD`. Stop both with Ctrl+C.
 
 `npm run check` runs lint, the format check, the type check and all tests. Other root scripts:
 
@@ -75,6 +75,10 @@ The API reads its settings from environment variables and stops at start-up if a
 | Variable | Default | Purpose |
 |---|---|---|
 | `DATABASE_URL` | none, required | PostgreSQL connection string. Locally, the pooled string of your Neon development branch (or a local PostgreSQL database), ending in `sslmode=verify-full` for Neon |
+| `JWT_SECRET` | none, required | Signs session tokens; at least 32 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` and use a different value in each environment |
+| `SEED_HR_PASSWORD` | none, needed by `db:seed` | Password for the demo HR users; at least 12 characters |
+| `NODE_ENV` | `development` | `production` makes the session cookie Secure (HTTPS only) |
+| `TRUST_PROXY` | `false` | `true` behind Vercel and Render, so the login rate limit sees the client IP address |
 | `PORT` | `3000` | Port the API listens on |
 | `LOG_LEVEL` | `info` | pino log level: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 
@@ -103,11 +107,22 @@ The migrations also load the reference data: the four countries and their curren
 
 Emails use the reserved `example.com` domain, and no real personal data or pay is used.
 
+Every run also creates or updates the demo HR users, all with the password in `SEED_HR_PASSWORD`. Running the seed again changes the password and signs out existing sessions.
+
+| Email | Role | Sees |
+|---|---|---|
+| `global.hr@acme.example.com` | Global HR | All countries, and manages users |
+| `hr.in@acme.example.com` | Country HR | India |
+| `hr.us@acme.example.com` | Country HR | USA |
+| `hr.ca@acme.example.com` | Country HR | Canada |
+| `hr.au@acme.example.com` | Country HR | Australia |
+
 | Option | What it does |
 |---|---|
 | `-- --reset` | Replace existing employees, pay and seed exchange rates. Reference data is kept. Without it, the script stops if employees exist. |
 | `-- --count 2000` | Load fewer employees, keeping the same country split. |
 | `-- --seed 42` | Generate a different data set. |
+| `-- --users-only` | Create or update only the demo HR users. |
 
 The load runs in one transaction, so a failed run changes nothing. Against the Neon development branch it takes about 45 seconds.
 
@@ -133,7 +148,7 @@ How it fits together:
 - A merge to `main` deploys both parts. Vercel builds the web app. Render deploys the API only after the CI workflow has passed on the commit, and only when API, shared or root package files change.
 - Each pull request gets a Vercel preview deployment. Previews need a Vercel login and call the production API.
 - The Render build runs `npm ci --omit=dev` and then applies database migrations, so they run before the new version starts. A failed migration fails the deploy and the running version stays up.
-- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV` and `LOG_LEVEL` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch) and later secrets are set in the Render dashboard and never committed.
+- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV`, `LOG_LEVEL` and `TRUST_PROXY` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch), `JWT_SECRET` and later secrets are set in the Render dashboard and never committed.
 - The free Render service sleeps after 15 minutes without traffic and takes about a minute to wake. Open the app a few minutes before a demo.
 
 ## Demo
