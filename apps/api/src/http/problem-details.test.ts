@@ -8,7 +8,7 @@ import { requestLogger } from './request-logger.ts';
 
 describe('problem details', () => {
   it('returns 404 for unknown routes', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
 
     const response = await request(app).get('/api/unknown');
 
@@ -25,7 +25,7 @@ describe('problem details', () => {
   });
 
   it('returns 400 for a malformed JSON body', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
 
     const response = await request(app)
       .post('/api/health')

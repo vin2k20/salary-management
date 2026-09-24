@@ -4,7 +4,7 @@ import { createTestApp } from '../test/test-app.ts';
 
 describe('security headers and request logging', () => {
   it('sets security headers', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
 
     const response = await request(app).get('/api/health');
 
@@ -14,7 +14,7 @@ describe('security headers and request logging', () => {
   });
 
   it('returns a generated request ID', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
 
     const response = await request(app).get('/api/health');
 
@@ -22,7 +22,7 @@ describe('security headers and request logging', () => {
   });
 
   it('reuses a valid incoming request ID and ignores an invalid one', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
 
     const valid = await request(app).get('/api/health').set('X-Request-Id', 'abc-123');
     const invalid = await request(app).get('/api/health').set('X-Request-Id', 'not valid!');
@@ -32,7 +32,7 @@ describe('security headers and request logging', () => {
   });
 
   it('includes the request ID in problem details', async () => {
-    const { app } = createTestApp();
+    const { app } = await createTestApp();
 
     const response = await request(app).get('/api/unknown');
 
@@ -40,7 +40,7 @@ describe('security headers and request logging', () => {
   });
 
   it('logs each request with its ID, method, path and status, without query or headers', async () => {
-    const { app, logLines } = createTestApp();
+    const { app, logLines } = await createTestApp();
 
     await request(app).get('/api/health?search=someone').set('Cookie', 'session=secret');
 
