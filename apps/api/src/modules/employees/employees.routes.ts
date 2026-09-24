@@ -1,6 +1,7 @@
 import {
   createEmployeeRequestSchema,
   employeeListQuerySchema,
+  updateEmployeeRequestSchema,
   type EmployeeResponse,
 } from '@salary/shared';
 import { Router, type Request } from 'express';
@@ -9,7 +10,12 @@ import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseBody, parseQuery } from '../../http/validation.ts';
-import { createEmployee, findEmployeeOrThrow, toEmployee } from './employee-record.service.ts';
+import {
+  createEmployee,
+  findEmployeeOrThrow,
+  toEmployee,
+  updateEmployee,
+} from './employee-record.service.ts';
 import { employeeDirectory } from './employees.service.ts';
 import { referenceData } from './reference.service.ts';
 
@@ -46,6 +52,16 @@ export function employeesRouter({ db, clock }: { db: Database; clock: Clock }): 
   router.get('/:id', async (req, res) => {
     const row = await findEmployeeOrThrow(db, signedIn(req).scope, employeeId(req));
     const body: EmployeeResponse = { employee: toEmployee(row) };
+    res.json(body);
+  });
+
+  router.patch('/:id', async (req, res) => {
+    const { user, scope } = signedIn(req);
+    const id = employeeId(req);
+    const update = parseBody(updateEmployeeRequestSchema, req.body);
+    const body: EmployeeResponse = {
+      employee: await updateEmployee(db, scope, id, update, user, clock),
+    };
     res.json(body);
   });
 

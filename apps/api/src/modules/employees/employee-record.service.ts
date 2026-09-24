@@ -3,9 +3,13 @@ import {
   countryFieldsSchema,
   countryName,
   type CountryCode,
+  countryDetailIssues,
+  inactiveDateIssue,
   type CreateEmployeeRequest,
   type CurrentUser,
+  type DetailIssue,
   type Employee,
+  type UpdateEmployeeRequest,
 } from '@salary/shared';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
@@ -13,7 +17,7 @@ import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { isUniqueViolation } from '../../db/errors.ts';
 import { employees } from '../../db/schema.ts';
-import { HttpError } from '../../http/errors.ts';
+import { HttpError, RequestValidationError } from '../../http/errors.ts';
 import { scopeCondition, type Scope } from '../auth/scope.ts';
 import { diffFields, recordChange } from '../change-log/change-log.ts';
 
@@ -133,4 +137,78 @@ export async function createEmployee(
     }
     throw error;
   }
+}
+
+/** The employee after an update, with the status rules applied, and any problems with it. */
+export function applyUpdate(
+  current: Employee,
+  update: UpdateEmployeeRequest,
+  today: string,
+): { next: Employee; issues: DetailIssue[] } {
+  const next: Employee = { ...current, ...update };
+  if (update.status === 'active' && update.inactiveOn === undefined) next.inactiveOn = null;
+  if (next.status === 'inactive' && next.inactiveOn === null) next.inactiveOn = today;
+
+  const issues = countryDetailIssues(next);
+  if (next.status === 'active' && next.inactiveOn !== null) {
+    issues.push({ path: ['inactiveOn'], message: 'Only inactive employees have an inactive date' });
+  }
+  if (next.status === 'inactive' && next.inactiveOn !== null) {
+    const message = inactiveDateIssue(next.hireDate, next.inactiveOn, today);
+    if (message) issues.push({ path: ['inactiveOn'], message });
+  }
+  return { next, issues };
+}
+
+/**
+ * Changes an employee's details, or marks them inactive or active again, in one transaction with
+ * the change log. The employee keeps their pay and history when marked inactive.
+ */
+export async function updateEmployee(
+  db: Database,
+  scope: Scope,
+  id: string,
+  update: UpdateEmployeeRequest,
+  actor: CurrentUser,
+  clock: Clock,
+): Promise<Employee> {
+  return db.transaction(async (tx) => {
+    const current = toEmployee(await findEmployeeOrThrow(tx, scope, id));
+    const { next, issues } = applyUpdate(current, update, clock.now().toISOString().slice(0, 10));
+    if (issues.length > 0) {
+      throw new RequestValidationError(
+        issues.map((issue) => ({ field: issue.path.join('.'), message: issue.message })),
+      );
+    }
+    if (update.jobTitle !== undefined) {
+      next.jobTitle = await storedSpelling(tx, scope, employees.jobTitle, update.jobTitle);
+    }
+    if (update.department !== undefined) {
+      next.department = await storedSpelling(tx, scope, employees.department, update.department);
+    }
+
+    const { id: _id, employeeCode: _code, countryCode: _country, ...details } = next;
+    const [row] = await tx
+      .update(employees)
+      .set({ ...details, updatedAt: clock.now() })
+      .where(eq(employees.id, id))
+      .returning();
+    if (!row) throw new HttpError(404, 'Employee not found');
+    const updated = toEmployee(row);
+
+    await recordChange(
+      tx,
+      {
+        entityType: 'employee',
+        entityId: id,
+        action:
+          current.status === 'active' && updated.status === 'inactive' ? 'inactivated' : 'updated',
+        changes: diffFields(loggedFields(current), loggedFields(updated)),
+        countryCode: updated.countryCode,
+        changedBy: actor.id,
+      },
+      clock,
+    );
+    return updated;
+  });
 }
