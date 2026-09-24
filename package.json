@@ -12,7 +12,7 @@
     "apps/web"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "npm run dev -w @salary/api & npm run dev -w @salary/web; wait",
     "build": "npm run build --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",
