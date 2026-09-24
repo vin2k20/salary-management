@@ -1,5 +1,7 @@
 # Salary Management for ACME HR
 
+[![CI](https://github.com/vin2k20/salary-management/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/vin2k20/salary-management/actions/workflows/ci.yml)
+
 A web application where global and country HR managers maintain pay data for 10,000 employees in India, the USA, Canada and Australia, and see how the organisation pays people on a dashboard.
 
 Status: tooling set up, features not started. This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
@@ -60,6 +62,8 @@ To be completed in steps 05 and 06.
 ## Tests
 
 Each workspace uses Vitest, with test files next to the code they test (`*.test.ts`). Run all tests with `npm test`, or one workspace with `npm test -w @salary/api`. Test types are added as the build goes on: API tests with Supertest and PGlite, UI tests with React Testing Library, and a Playwright smoke test.
+
+GitHub Actions runs lint, the format check, the type check, all tests and the build on every push and on every pull request to `main` (`.github/workflows/ci.yml`).
 
 ## Deployment
 
