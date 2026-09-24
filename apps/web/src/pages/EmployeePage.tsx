@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { errorMessage } from '../api/errors.ts';
+import { useCurrentUser } from '../auth/session.ts';
 import { Alert } from '../components/ui/alert.tsx';
 import { Button, ButtonLink } from '../components/ui/button.tsx';
 import { Card, CardContent } from '../components/ui/card.tsx';
@@ -13,15 +14,17 @@ import { MarkInactivePanel } from '../employees/MarkInactivePanel.tsx';
 import { PayChangeDialog } from '../employees/PayChangeDialog.tsx';
 import { PayHistory } from '../employees/PayHistory.tsx';
 import { PaySummary } from '../employees/PaySummary.tsx';
+import { TransferDialog } from '../employees/TransferDialog.tsx';
 import { employeeSaved, payChanged, updateEmployee, useEmployee } from '../employees/api.ts';
 
-type OpenDialog = 'none' | 'pay-change';
+type OpenDialog = 'none' | 'pay-change' | 'move';
 
 /** One employee's record: details, pay, actions and history (HLD 3.1). */
 export function EmployeePage() {
   const { id = '' } = useParams();
   const employee = useEmployee(id);
   const data = employee.data?.employee;
+  const { data: user } = useCurrentUser();
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState<OpenDialog>('none');
   const [confirming, setConfirming] = useState(false);
@@ -75,6 +78,17 @@ export function EmployeePage() {
                 <ButtonLink to={`/employees/${data.id}/edit`} variant="secondary">
                   Edit
                 </ButtonLink>
+                {user?.role === 'global_hr' && data.status === 'active' && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setNotice(null);
+                      setDialog('move');
+                    }}
+                  >
+                    Move to another country
+                  </Button>
+                )}
                 {data.status === 'active' ? (
                   <Button
                     variant="secondary"
@@ -185,6 +199,23 @@ export function EmployeePage() {
               onSaved={() => {
                 setDialog('none');
                 setNotice('Pay change saved.');
+                void payChanged(queryClient, data.id);
+              }}
+            />
+          )}
+          {dialog === 'move' && (
+            <TransferDialog
+              open
+              onOpenChange={(open) => {
+                if (!open) setDialog('none');
+              }}
+              employeeId={data.id}
+              currentCountry={data.countryCode}
+              onMoved={(countryCode) => {
+                setDialog('none');
+                setNotice(
+                  `${data.firstName} ${data.lastName} was moved to ${COUNTRIES[countryCode].name}.`,
+                );
                 void payChanged(queryClient, data.id);
               }}
             />
