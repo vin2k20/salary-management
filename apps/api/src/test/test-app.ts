@@ -3,6 +3,7 @@ import { createApp } from '../app.ts';
 import type { Clock } from '../clock.ts';
 import type { Database } from '../db/client.ts';
 import type { EmailMessage, EmailSender } from '../email/email-sender.ts';
+import type { RateProvider } from '../modules/fx-rates/frankfurter-client.ts';
 import { createLogger } from '../logger.ts';
 import { createRecordingEmailSender } from './email.ts';
 import { createTestDatabase, type TestDatabase } from './test-database.ts';
@@ -12,6 +13,16 @@ export type LogLine = Record<string, unknown>;
 export const TEST_JWT_SECRET = 'test-secret-that-is-at-least-32-characters-long';
 
 export const TEST_APP_URL = 'http://app.test';
+
+export const TEST_RATES_SECRET = 'rates-secret-for-tests-that-is-long-enough';
+
+/** A rate provider with fixed rates, so tests never call Frankfurter. */
+export function fixedRateProvider(
+  date = '2026-09-24',
+  rates = { CAD: '1.4117', AUD: '1.4232', INR: '95.96' },
+): RateProvider {
+  return { latestUsdRates: () => Promise.resolve({ date, rates }) };
+}
 
 /** A clock that tests can move forward. */
 export function testClock(start = '2026-09-24T10:00:00Z'): Clock & { advance(ms: number): void } {
@@ -42,6 +53,9 @@ export async function createTestApp(
     clock?: Clock;
     secureCookies?: boolean;
     emailSender?: EmailSender;
+    rateProvider?: RateProvider;
+    /** Secret for the scheduled refresh; null turns the endpoint off. */
+    ratesRefreshSecret?: string | null;
   } = {},
 ): Promise<{ app: Express; logLines: LogLine[]; emails: EmailMessage[] }> {
   const logLines: LogLine[] = [];
@@ -60,6 +74,9 @@ export async function createTestApp(
     auth: { jwtSecret: TEST_JWT_SECRET, secureCookies: options.secureCookies ?? false },
     emailSender,
     appUrl: TEST_APP_URL,
+    rateProvider: options.rateProvider ?? fixedRateProvider(),
+    ratesRefreshSecret:
+      options.ratesRefreshSecret === undefined ? TEST_RATES_SECRET : options.ratesRefreshSecret,
     generateRequestId: () => 'req-1',
   });
   return { app, logLines, emails: recorder.sent };
