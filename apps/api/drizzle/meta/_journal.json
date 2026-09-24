@@ -22,6 +22,20 @@
       "when": 1790247261822,
       "tag": "0002_reference-data",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790247313152,
+      "tag": "0003_pay-components",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790247313703,
+      "tag": "0004_system-pay-components",
+      "breakpoints": true
     }
   ]
 }

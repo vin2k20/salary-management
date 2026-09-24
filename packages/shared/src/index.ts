@@ -17,3 +17,8 @@ export {
   type PayFrequencyCode,
 } from './pay-frequency.ts';
 export { COUNTRIES, COUNTRY_CODES, type CountryCode } from './countries.ts';
+export {
+  GROSS_PAY_CATEGORIES,
+  PAY_COMPONENT_CATEGORIES,
+  type PayComponentCategory,
+} from './pay-components.ts';
