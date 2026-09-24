@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { emailSchema } from './auth.ts';
 import { COUNTRIES, COUNTRY_CODES, countryCodeSchema, type CountryCode } from './countries.ts';
 import { EMPLOYEE_STATUSES, EMPLOYMENT_TYPES } from './employees.ts';
+import { payLineIssues, payLineSchema } from './pay-lines.ts';
 import { REGION_LABELS, REGIONS } from './regions.ts';
 
 /** Overtime eligibility under the US Fair Labor Standards Act. */
@@ -122,7 +123,10 @@ export function countryDetailIssues(value: {
 
 const COUNTRY_CHECK_FIELDS = ['countryCode', 'region', 'countryFields'];
 
-/** A new employee. New employees are always active; the employee code is kept in upper case. */
+/**
+ * A new employee. New employees are always active; the employee code is kept in upper case.
+ * Starting pay, if given, starts on the hire date in the country's currency.
+ */
 export const createEmployeeRequestSchema = z
   .object({
     employeeCode: z
@@ -136,6 +140,7 @@ export const createEmployeeRequestSchema = z
     fte: detailFields.fte.default(1),
     countryCode: z.enum(COUNTRY_CODES as [CountryCode, ...CountryCode[]], 'Choose a country'),
     countryFields: countryFieldsSchema.default({}),
+    startingPay: z.array(payLineSchema).default([]),
   })
   .superRefine(
     (value, context) => {
@@ -147,6 +152,17 @@ export const createEmployeeRequestSchema = z
     {
       when: ({ issues }) =>
         !issues.some((issue) => COUNTRY_CHECK_FIELDS.includes(String(issue.path?.[0]))),
+    },
+  )
+  .superRefine(
+    (value, context) => {
+      for (const issue of payLineIssues(value.countryCode, value.startingPay, 'startingPay')) {
+        context.addIssue({ code: 'custom', ...issue });
+      }
+    },
+    {
+      when: ({ issues }) =>
+        !issues.some((issue) => ['countryCode', 'startingPay'].includes(String(issue.path?.[0]))),
     },
   );
 
