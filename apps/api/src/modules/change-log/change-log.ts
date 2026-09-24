@@ -1,8 +1,15 @@
 import { isDeepStrictEqual } from 'node:util';
-import type { ChangeLogAction, ChangeLogEntityType, FieldChanges } from '@salary/shared';
+import type {
+  ChangeLogAction,
+  ChangeLogEntityType,
+  ChangeLogEntry as ChangeLogItem,
+  FieldChanges,
+} from '@salary/shared';
+import { and, desc, eq } from 'drizzle-orm';
 import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
-import { changeLog } from '../../db/schema.ts';
+import { changeLog, users } from '../../db/schema.ts';
+import { scopeCondition, type Scope } from '../auth/scope.ts';
 
 export interface ChangeLogEntry {
   entityType: ChangeLogEntityType;
@@ -41,4 +48,45 @@ export async function recordChange(db: Database, entry: ChangeLogEntry, clock: C
     return;
   }
   await db.insert(changeLog).values({ ...entry, changedAt: clock.now() });
+}
+
+/**
+ * Change log of one record, newest first, with who made each change. Only entries for countries
+ * in the caller's scope are read; callers also check that the record itself is in scope.
+ */
+export async function changeLogFor(
+  db: Database,
+  scope: Scope,
+  entityType: ChangeLogEntityType,
+  entityId: string,
+): Promise<ChangeLogItem[]> {
+  const rows = await db
+    .select({
+      id: changeLog.id,
+      action: changeLog.action,
+      changes: changeLog.changes,
+      changedAt: changeLog.changedAt,
+      changedById: users.id,
+      changedByName: users.name,
+    })
+    .from(changeLog)
+    .leftJoin(users, eq(users.id, changeLog.changedBy))
+    .where(
+      and(
+        eq(changeLog.entityType, entityType),
+        eq(changeLog.entityId, entityId),
+        scopeCondition(scope, changeLog.countryCode),
+      ),
+    )
+    .orderBy(desc(changeLog.changedAt));
+  return rows.map((row) => ({
+    id: row.id,
+    action: row.action,
+    changes: row.changes,
+    changedAt: row.changedAt.toISOString(),
+    changedBy:
+      row.changedById && row.changedByName
+        ? { id: row.changedById, name: row.changedByName }
+        : null,
+  }));
 }

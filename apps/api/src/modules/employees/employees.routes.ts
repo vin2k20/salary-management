@@ -2,6 +2,7 @@ import {
   createEmployeeRequestSchema,
   employeeListQuerySchema,
   updateEmployeeRequestSchema,
+  type ChangeLogResponse,
   type EmployeeResponse,
 } from '@salary/shared';
 import { Router, type Request } from 'express';
@@ -10,6 +11,7 @@ import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseBody, parseQuery } from '../../http/validation.ts';
+import { changeLogFor } from '../change-log/change-log.ts';
 import {
   createEmployee,
   findEmployeeOrThrow,
@@ -62,6 +64,13 @@ export function employeesRouter({ db, clock }: { db: Database; clock: Clock }): 
     const body: EmployeeResponse = {
       employee: await updateEmployee(db, scope, id, update, user, clock),
     };
+    res.json(body);
+  });
+
+  router.get('/:id/change-log', async (req, res) => {
+    const { scope } = signedIn(req);
+    const row = await findEmployeeOrThrow(db, scope, employeeId(req));
+    const body: ChangeLogResponse = { items: await changeLogFor(db, scope, 'employee', row.id) };
     res.json(body);
   });
 
