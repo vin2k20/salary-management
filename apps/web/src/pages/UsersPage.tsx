@@ -7,6 +7,7 @@ import { Alert } from '../components/ui/alert.tsx';
 import { Button } from '../components/ui/button.tsx';
 import { Card, CardContent } from '../components/ui/card.tsx';
 import { cn } from '../lib/cn.ts';
+import { formatDate } from '../lib/format.ts';
 import { ROLE_LABELS, UserForm, type UserFormValues } from '../users/UserForm.tsx';
 import { createUser, resendInvite, updateUser, usersQueryKey, useUsers } from '../users/api.ts';
 
@@ -22,13 +23,8 @@ const STATUS_STYLES: Record<UserStatus, string> = {
   inactive: 'bg-muted text-muted-foreground line-through',
 };
 
-function formatDate(value: string | null): string {
-  if (value === null) return 'Never';
-  return new Date(value).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+function formatLastSignIn(value: string | null): string {
+  return value === null ? 'Never' : formatDate(value);
 }
 
 type Panel = { kind: 'closed' } | { kind: 'add' } | { kind: 'edit'; user: UserSummary };
@@ -202,7 +198,7 @@ export function UsersPage() {
                       {STATUS_LABELS[user.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-2">{formatDate(user.lastLoginAt)}</td>
+                  <td className="px-4 py-2">{formatLastSignIn(user.lastLoginAt)}</td>
                   <td className="px-4 py-2">
                     {user.id !== currentUser?.id && (
                       <div className="flex justify-end gap-2">

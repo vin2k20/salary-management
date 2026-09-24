@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import { currentUserQueryKey, logout } from '../auth/session.ts';
 import { Button } from '../components/ui/button.tsx';
+import { CurrencyToggle } from '../currency/CurrencyToggle.tsx';
 import { cn } from '../lib/cn.ts';
 import { NAVIGATION } from './navigation.ts';
 
@@ -53,6 +54,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-4">
+            <CurrencyToggle />
             <div className="text-right text-sm leading-tight">
               <div className="font-medium">{user.name}</div>
               <div className="text-muted-foreground">{roleLabel(user)}</div>

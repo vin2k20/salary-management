@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchHealth } from '../api/health.ts';
+import { ExchangeRatesCard } from '../currency/ExchangeRatesCard.tsx';
 
 export function HomePage() {
   const health = useQuery({
@@ -35,6 +36,7 @@ export function HomePage() {
           </li>
         </ul>
       </section>
+      <ExchangeRatesCard />
     </>
   );
 }
