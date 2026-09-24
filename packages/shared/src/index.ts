@@ -85,3 +85,4 @@ export {
   type FxRatesResponse,
   type FxRefreshResponse,
 } from './fx-rates.ts';
+export { convertMinor, isStale, rateOnOrBefore, type UnitsPerUsd } from './currency-conversion.ts';
