@@ -16,3 +16,4 @@ export {
   periodsPerYear,
   type PayFrequencyCode,
 } from './pay-frequency.ts';
+export { COUNTRIES, COUNTRY_CODES, type CountryCode } from './countries.ts';

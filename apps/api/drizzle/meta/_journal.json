@@ -8,6 +8,20 @@
       "when": 1790247235760,
       "tag": "0000_extensions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790247261311,
+      "tag": "0001_reference-tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790247261822,
+      "tag": "0002_reference-data",
+      "breakpoints": true
     }
   ]
 }
