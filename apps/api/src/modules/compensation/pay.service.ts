@@ -19,7 +19,7 @@ import type { PayTotals } from '../../db/pay-totals.ts';
 import { HttpError, RequestValidationError } from '../../http/errors.ts';
 import type { Scope } from '../auth/scope.ts';
 import { recordChange } from '../change-log/change-log.ts';
-import { findEmployeeOrThrow } from '../employees/employee-record.service.ts';
+import { findEmployeeOrThrow } from '../employees/employees.repository.ts';
 import {
   historyRows,
   itemsOn,

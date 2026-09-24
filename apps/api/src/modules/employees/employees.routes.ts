@@ -14,12 +14,8 @@ import { HttpError } from '../../http/errors.ts';
 import { parseBody, parseQuery } from '../../http/validation.ts';
 import { changeLogFor } from '../change-log/change-log.ts';
 import { currentTotals } from '../compensation/pay.service.ts';
-import {
-  createEmployee,
-  findEmployeeOrThrow,
-  toEmployee,
-  updateEmployee,
-} from './employee-record.service.ts';
+import { createEmployee, toEmployee, updateEmployee } from './employee-record.service.ts';
+import { findEmployeeOrThrow } from './employees.repository.ts';
 import { employeeDirectory } from './employees.service.ts';
 import { referenceData } from './reference.service.ts';
 

@@ -20,8 +20,10 @@ import { employees } from '../../db/schema.ts';
 import { HttpError, RequestValidationError } from '../../http/errors.ts';
 import { scopeCondition, type Scope } from '../auth/scope.ts';
 import { diffFields, recordChange } from '../change-log/change-log.ts';
-
-export type EmployeeRecord = typeof employees.$inferSelect;
+import { loadComponents } from '../compensation/pay.repository.ts';
+import { planPayChange } from '../compensation/pay-rules.ts';
+import { savePayPlan } from '../compensation/pay.service.ts';
+import { findEmployeeOrThrow, type EmployeeRecord } from './employees.repository.ts';
 
 export function toEmployee(row: EmployeeRecord): Employee {
   return {
@@ -57,25 +59,6 @@ export function loggedFields(employee: Employee): Record<string, unknown> {
   return fields;
 }
 
-/** An employee in the caller's scope; records outside it are treated as missing (404). */
-export async function findEmployee(
-  db: Database,
-  scope: Scope,
-  id: string,
-): Promise<EmployeeRecord | undefined> {
-  const [row] = await db
-    .select()
-    .from(employees)
-    .where(and(eq(employees.id, id), scopeCondition(scope, employees.countryCode)));
-  return row;
-}
-
-export async function findEmployeeOrThrow(db: Database, scope: Scope, id: string) {
-  const row = await findEmployee(db, scope, id);
-  if (!row) throw new HttpError(404, 'Employee not found');
-  return row;
-}
-
 /**
  * The spelling already stored in the caller's scope for a job title or department, ignoring
  * case, so "software engineer" joins "Software Engineer" in filters and statistics. New values
@@ -93,7 +76,59 @@ export async function storedSpelling(db: Database, scope: Scope, column: PgColum
   return typeof row?.value === 'string' ? row.value : value;
 }
 
-/** Adds an active employee in the caller's scope, in one transaction with the change log. */
+/**
+ * Starting pay: a pay change with the reason "hire" from the hire date, checked with the same
+ * rules as any other pay change.
+ */
+async function saveStartingPay(
+  tx: Database,
+  scope: Scope,
+  employee: Employee,
+  lines: CreateEmployeeRequest['startingPay'],
+  actor: CurrentUser,
+  clock: Clock,
+) {
+  const state = {
+    countryCode: employee.countryCode,
+    hireDate: employee.hireDate,
+    latestChangeDate: null,
+    openItems: [],
+  };
+  const components = await loadComponents(
+    tx,
+    scope,
+    lines.map((line) => line.componentId),
+  );
+  const result = planPayChange(
+    state,
+    { effectiveFrom: employee.hireDate, set: lines, end: [] },
+    components,
+  );
+  if (!result.ok) {
+    throw new RequestValidationError(
+      result.issues.map((issue) => ({
+        ...issue,
+        field: issue.field.replace(/^set\./, 'startingPay.'),
+      })),
+    );
+  }
+  await savePayPlan(tx, {
+    scope,
+    employee,
+    effectiveFrom: employee.hireDate,
+    reason: 'hire',
+    note: null,
+    plan: result.plan,
+    openItems: [],
+    actor,
+    clock,
+  });
+}
+
+/**
+ * Adds an active employee in the caller's scope, with any starting pay, in one transaction with
+ * the change log.
+ */
 export async function createEmployee(
   db: Database,
   scope: Scope,
@@ -105,11 +140,12 @@ export async function createEmployee(
     throw new HttpError(403, `You can only add employees in ${countryName(scope.countryCode)}`);
   }
   try {
+    const { startingPay, ...details } = input;
     return await db.transaction(async (tx) => {
       const [row] = await tx
         .insert(employees)
         .values({
-          ...input,
+          ...details,
           jobTitle: await storedSpelling(tx, scope, employees.jobTitle, input.jobTitle),
           department: await storedSpelling(tx, scope, employees.department, input.department),
         })
@@ -128,6 +164,9 @@ export async function createEmployee(
         },
         clock,
       );
+      if (startingPay.length > 0) {
+        await saveStartingPay(tx, scope, employee, startingPay, actor, clock);
+      }
       return employee;
     });
   } catch (error) {
