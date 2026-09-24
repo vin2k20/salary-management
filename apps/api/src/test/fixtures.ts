@@ -1,6 +1,6 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { employees, payChanges, payComponents, payItems, users } from '../db/schema.ts';
+import { employees, fxRates, payChanges, payComponents, payItems, users } from '../db/schema.ts';
 
 type NewEmployee = typeof employees.$inferInsert;
 
@@ -84,4 +84,56 @@ export async function insertUser(db: Database, overrides: Partial<typeof users.$
     .returning();
   if (!user) throw new Error('User was not inserted');
   return user;
+}
+
+/** Stores exchange rates for a date; the defaults are the Frankfurter rates of 24 Sep 2026. */
+export async function insertRates(
+  db: Database,
+  rateDate = '2026-09-24',
+  rates: Record<string, string> = { USD: '1', CAD: '1.4117', AUD: '1.4232', INR: '95.96' },
+) {
+  await db
+    .insert(fxRates)
+    .values(
+      Object.entries(rates).map(([currencyCode, unitsPerUsd]) => ({
+        currencyCode,
+        unitsPerUsd,
+        rateDate,
+        source: 'test',
+      })),
+    )
+    .onConflictDoNothing();
+}
+
+/**
+ * Inserts an employee with one open pay item, hired and paid from 1 Jan 2025. The component must
+ * exist for the employee's country (or all countries).
+ */
+export async function insertEmployeeWithPay(
+  db: Database,
+  employee: Partial<NewEmployee>,
+  pay: { component: string; amountMinor: number; frequency: string; currency: string },
+) {
+  const inserted = await insertEmployee(db, { hireDate: '2025-01-01', ...employee });
+  const changeId = await insertPayChange(db, inserted.id, '2025-01-01');
+  const countryComponent = await db
+    .select({ id: payComponents.id })
+    .from(payComponents)
+    .where(
+      and(
+        eq(payComponents.code, pay.component),
+        eq(payComponents.countryCode, inserted.countryCode),
+      ),
+    );
+  const component = countryComponent[0]?.id ?? (await componentId(db, pay.component, null));
+  await insertPayItem(db, {
+    employeeId: inserted.id,
+    payChangeId: changeId,
+    componentId: component,
+    amountMinor: pay.amountMinor,
+    currencyCode: pay.currency,
+    frequencyCode: pay.frequency,
+    effectiveFrom: '2025-01-01',
+  });
+  return inserted;
 }
