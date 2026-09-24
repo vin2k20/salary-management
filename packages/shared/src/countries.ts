@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { CurrencyCode } from './money.ts';
 
 /** The four countries in scope and their local currencies. */
@@ -11,3 +12,5 @@ export const COUNTRIES = {
 export type CountryCode = keyof typeof COUNTRIES;
 
 export const COUNTRY_CODES = Object.keys(COUNTRIES) as CountryCode[];
+
+export const countryCodeSchema = z.enum(COUNTRY_CODES as [CountryCode, ...CountryCode[]]);
