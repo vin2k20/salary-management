@@ -1,0 +1,28 @@
+sequenceDiagram
+    autonumber
+    actor HR as HR manager
+    participant UI as React app
+    participant API as API (Express)
+    participant DB as PostgreSQL
+    participant Mail as Brevo
+
+    Note over HR,Mail: Sign in
+    HR->>UI: Enter email and password
+    UI->>API: POST /api/auth/login
+    API->>DB: Find active user by email
+    API->>API: Verify Argon2id hash
+    API-->>UI: 200 with Set-Cookie: JWT (httpOnly, Secure, SameSite=Lax, 8 hours)
+    UI->>API: Later calls send the cookie automatically
+    API->>API: Check signature, expiry and token version, then build the role and country scope
+
+    Note over HR,Mail: Forgot password, or a new user invited by a global HR user
+    HR->>UI: Ask for a reset link
+    UI->>API: POST /api/auth/forgot-password
+    API->>DB: If the user exists, store a hash of a random token (reset 30 minutes, invite 72 hours)
+    API->>Mail: Send email with the link
+    API-->>UI: 202, same response whether or not the email exists
+    Mail-->>HR: Email with single-use link
+    HR->>UI: Open link and choose a password
+    UI->>API: POST /api/auth/set-password
+    API->>DB: Check token, save new hash, mark token used, raise token version
+    API-->>UI: 204, older sessions stop working

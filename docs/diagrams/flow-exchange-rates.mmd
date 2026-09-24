@@ -1,0 +1,24 @@
+sequenceDiagram
+    autonumber
+    participant Job as Scheduled job (GitHub Actions)
+    participant API as API (Express)
+    participant FX as Frankfurter API
+    participant DB as PostgreSQL
+    actor HR as Global HR manager
+
+    Note over Job,HR: Daily refresh
+    Job->>API: POST /api/internal/fx-rates/refresh with the shared secret
+    API->>API: Check the secret
+    API->>FX: GET latest rates, base USD, for CAD, AUD and INR
+    FX-->>API: Rates and their date
+    API->>DB: Upsert one row per currency and rate date
+    API-->>Job: 200 with the stored date, or an error that fails the job
+
+    Note over Job,HR: Manual refresh
+    HR->>API: POST /api/fx-rates/refresh (global HR only)
+    API->>FX: Same fetch and store
+    API-->>HR: Rates and their date
+
+    Note over Job,HR: Reading
+    API->>DB: Latest rate on or before today for each currency
+    API-->>HR: Amounts converted to USD, with the date of the rates shown

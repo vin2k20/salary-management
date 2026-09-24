@@ -1,0 +1,29 @@
+sequenceDiagram
+    autonumber
+    actor HR as HR manager
+    participant UI as React app
+    participant API as API (Express)
+    participant DB as PostgreSQL
+
+    Note over HR,DB: Import (.xlsx with two sheets, or one CSV dataset)
+    HR->>UI: Choose a file
+    UI->>API: POST /api/imports/validate (multipart)
+    API->>API: Check size and type, read Employees and Pay components rows
+    API->>API: Validate every row with the shared Zod schemas and the user's country scope
+    API->>DB: Look up employee codes and pay component codes
+    API-->>UI: Preview: rows to add, rows to update, errors by row and column
+    alt File has errors
+        UI-->>HR: Show errors, nothing is saved
+    else File is valid
+        HR->>UI: Confirm import
+        UI->>API: POST /api/imports/commit (same file)
+        API->>API: Read and validate again
+        API->>DB: One transaction: add or update employees, add pay changes with reason import
+        API-->>UI: Counts of added and updated rows
+    end
+
+    Note over HR,DB: Export
+    HR->>UI: Export the current view
+    UI->>API: GET /api/exports?format=xlsx and current filters
+    API->>DB: Read rows in batches, within the user's scope
+    API-->>UI: Streamed file with the same columns as the import

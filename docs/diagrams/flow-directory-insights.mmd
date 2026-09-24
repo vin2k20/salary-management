@@ -1,0 +1,28 @@
+sequenceDiagram
+    autonumber
+    actor HR as HR manager
+    participant UI as React app
+    participant API as API (Express)
+    participant DB as PostgreSQL
+
+    Note over HR,DB: Employee directory
+    HR->>UI: Search, filter, sort, or include inactive
+    UI->>API: GET /api/employees?search=&department=&sort=-annualTotal&page=1&currency=USD
+    API->>API: Apply the user's country scope to the query
+    API->>DB: One query on employees and current pay totals, with LIMIT/OFFSET and a total count
+    API-->>UI: One page of rows, amounts in USD or local currency
+    UI-->>HR: Table shows the page, cached by TanStack Query
+
+    Note over HR,DB: Pay change
+    HR->>UI: Change components, effective date and reason
+    UI->>API: POST /api/employees/:id/pay-changes
+    API->>DB: In one transaction, close the changed pay items and add the new ones
+    API-->>UI: 201, then the UI refreshes the employee, list and dashboard
+
+    Note over HR,DB: Dashboard
+    HR->>UI: Open the dashboard, USD toggle on or off
+    UI->>API: GET /api/insights/pay-range-by-country, by-job-title, cost-by-department, outliers
+    API->>DB: GROUP BY queries: count, min, max, avg, percentile_cont, within the user's scope
+    API->>DB: Latest exchange rates when amounts are shown in USD
+    API-->>UI: Statistics and the date of the rates used
+    UI-->>HR: Charts and tables
