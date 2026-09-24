@@ -740,7 +740,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 02 | Done | [#2](https://github.com/vin2k20/salary-management/pull/2) | 24 Sep 2026 | Workflow runs on every push and on pull requests to main |
 | 03 | Done | [#3](https://github.com/vin2k20/salary-management/pull/3) | 24 Sep 2026 | Node.js runs the TypeScript source directly (D39) |
 | 04 | Done | [#4](https://github.com/vin2k20/salary-management/pull/4), [#5](https://github.com/vin2k20/salary-management/pull/5), [#6](https://github.com/vin2k20/salary-management/pull/6) | 24 Sep 2026 | API and database in Ohio (D40); web app at acme-salary-management-vineet.vercel.app |
-| 05 | Not started | | | |
+| 05 | Done | [#7](https://github.com/vin2k20/salary-management/pull/7) | 24 Sep 2026 | Migrations run in the Render build (D41); totals function and rounding (D42) |
 | 06 | Not started | | | |
 | 07 | Not started | | | |
 | 08 | Not started | | | |
