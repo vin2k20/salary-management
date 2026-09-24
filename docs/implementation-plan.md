@@ -735,7 +735,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 
 | Step | Status | Branch or pull request | Merged on | Notes |
 |---|---|---|---|---|
-| 00 | Not started | | | |
+| 00 | Done | Committed directly on `main` (D37) | 24 Sep 2026 | No pull request for this step |
 | 01 | Not started | | | |
 | 02 | Not started | | | |
 | 03 | Not started | | | |
