@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { APP_TITLE } from './index.js';
+import { APP_TITLE } from './index.ts';
 
 describe('web package', () => {
   it('exports the application title', () => {

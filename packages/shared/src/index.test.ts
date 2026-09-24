@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { APP_NAME } from './index.js';
+import { APP_NAME } from './index.ts';
 
 describe('shared package', () => {
   it('exports the application name', () => {
