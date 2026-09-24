@@ -24,6 +24,7 @@ describe('database migrations', () => {
       "select indexname from pg_indexes where schemaname = 'public' and indexname like '%_idx'",
     );
     expect(rows.map((row) => row.indexname).sort()).toEqual([
+      'auth_tokens_user_id_purpose_idx',
       'change_log_entity_idx',
       'employees_country_code_idx',
       'employees_department_idx',
