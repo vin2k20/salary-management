@@ -30,3 +30,10 @@ services:
       # Pooled connection string of the Neon production branch, set in the Render dashboard.
       - key: DATABASE_URL
         sync: false
+      # Signs session tokens; a long random value set in the Render dashboard.
+      - key: JWT_SECRET
+        sync: false
+      # Requests arrive through Vercel and Render's proxies; read the client IP from
+      # X-Forwarded-For for the login rate limit.
+      - key: TRUST_PROXY
+        value: 'true'

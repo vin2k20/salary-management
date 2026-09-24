@@ -1,10 +1,10 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { loadConfig } from '../config.ts';
+import { loadScriptConfig } from '../config.ts';
 import { createDatabase } from '../db/client.ts';
 import { migrationsFolder } from '../db/migrations.ts';
 import { createLogger } from '../logger.ts';
 
-const config = loadConfig(process.env);
+const config = loadScriptConfig(process.env);
 const logger = createLogger(config.logLevel);
 const { db, close } = createDatabase(config.databaseUrl);
 

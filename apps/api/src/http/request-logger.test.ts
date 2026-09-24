@@ -34,7 +34,7 @@ describe('security headers and request logging', () => {
   it('includes the request ID in problem details', async () => {
     const { app } = await createTestApp();
 
-    const response = await request(app).get('/api/unknown');
+    const response = await request(app).get('/unknown');
 
     expect(response.body).toMatchObject({ status: 404, requestId: 'req-1' });
   });

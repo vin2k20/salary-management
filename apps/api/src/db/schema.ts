@@ -5,6 +5,7 @@ import {
   EMPLOYMENT_TYPES,
   PAY_CHANGE_REASONS,
   PAY_COMPONENT_CATEGORIES,
+  ROLES,
   type FieldChanges,
 } from '@salary/shared';
 import { sql } from 'drizzle-orm';
@@ -15,6 +16,7 @@ import {
   check,
   date,
   index,
+  integer,
   jsonb,
   numeric,
   pgTable,
@@ -156,8 +158,7 @@ export const payChanges = pgTable(
     effectiveFrom: date('effective_from', { mode: 'string' }).notNull(),
     reason: text('reason', { enum: PAY_CHANGE_REASONS }).notNull(),
     note: text('note'),
-    // References users from step 07.
-    createdBy: uuid('created_by'),
+    createdBy: uuid('created_by').references(() => users.id),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -241,8 +242,7 @@ export const changeLog = pgTable(
     action: text('action', { enum: CHANGE_LOG_ACTIONS }).notNull(),
     changes: jsonb('changes').$type<FieldChanges>().notNull(),
     countryCode: char('country_code', { length: 2 }).references(() => countries.code),
-    // References users from step 07.
-    changedBy: uuid('changed_by'),
+    changedBy: uuid('changed_by').references(() => users.id),
     // Set from the application clock, so tests control it.
     changedAt: timestamp('changed_at', { withTimezone: true }).notNull(),
   },
@@ -253,5 +253,35 @@ export const changeLog = pgTable(
     ),
     check('change_log_action_check', sql`${table.action} in ${allowedValues(CHANGE_LOG_ACTIONS)}`),
     index('change_log_entity_idx').on(table.entityType, table.entityId, table.changedAt),
+  ],
+);
+
+/**
+ * HR users. Emails are stored in lower case. A country HR user has exactly one country; a global
+ * HR user has none. The password hash is empty until an invite is accepted. Raising the token
+ * version signs the user out everywhere.
+ */
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    name: text('name').notNull(),
+    passwordHash: text('password_hash'),
+    role: text('role', { enum: ROLES }).notNull(),
+    countryCode: char('country_code', { length: 2 }).references(() => countries.code),
+    isActive: boolean('is_active').notNull().default(true),
+    tokenVersion: integer('token_version').notNull().default(0),
+    lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    unique('users_email_unique').on(table.email),
+    check('users_email_lowercase_check', sql`${table.email} = lower(${table.email})`),
+    check('users_role_check', sql`${table.role} in ${allowedValues(ROLES)}`),
+    check(
+      'users_country_check',
+      sql`(${table.role} = 'country_hr') = (${table.countryCode} is not null)`,
+    ),
   ],
 );

@@ -1,10 +1,24 @@
 import type { Express } from 'express';
 import { createApp } from '../app.ts';
+import type { Clock } from '../clock.ts';
 import type { Database } from '../db/client.ts';
 import { createLogger } from '../logger.ts';
 import { createTestDatabase, type TestDatabase } from './test-database.ts';
 
 export type LogLine = Record<string, unknown>;
+
+export const TEST_JWT_SECRET = 'test-secret-that-is-at-least-32-characters-long';
+
+/** A clock that tests can move forward. */
+export function testClock(start = '2026-09-24T10:00:00Z'): Clock & { advance(ms: number): void } {
+  let now = new Date(start).getTime();
+  return {
+    now: () => new Date(now),
+    advance: (ms) => {
+      now += ms;
+    },
+  };
+}
 
 let sharedDatabase: Promise<TestDatabase> | undefined;
 
@@ -15,11 +29,11 @@ export function sharedTestDatabase(): Promise<TestDatabase> {
 }
 
 /**
- * Creates the app with a fixed request ID, a logger that keeps lines in memory and, unless one is
- * given, the shared test database.
+ * Creates the app with a fixed request ID, a logger that keeps lines in memory, a test clock and,
+ * unless one is given, the shared test database.
  */
 export async function createTestApp(
-  options: { db?: Database } = {},
+  options: { db?: Database; clock?: Clock; secureCookies?: boolean } = {},
 ): Promise<{ app: Express; logLines: LogLine[] }> {
   const logLines: LogLine[] = [];
   const logger = createLogger('info', {
@@ -28,6 +42,12 @@ export async function createTestApp(
     },
   });
   const db = options.db ?? (await sharedTestDatabase()).db;
-  const app = createApp({ logger, db, generateRequestId: () => 'req-1' });
+  const app = createApp({
+    logger,
+    db,
+    clock: options.clock ?? testClock(),
+    auth: { jwtSecret: TEST_JWT_SECRET, secureCookies: options.secureCookies ?? false },
+    generateRequestId: () => 'req-1',
+  });
   return { app, logLines };
 }

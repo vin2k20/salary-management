@@ -21,10 +21,12 @@ export function HomePage() {
 
   return (
     <>
-      <h1>Salary Management</h1>
-      <section aria-labelledby="system-status-heading">
-        <h2 id="system-status-heading">System status</h2>
-        <ul role="status" className="status-list">
+      <h1 className="text-2xl font-semibold">Salary Management</h1>
+      <section aria-labelledby="system-status-heading" className="mt-6">
+        <h2 id="system-status-heading" className="text-lg font-medium">
+          System status
+        </h2>
+        <ul role="status" className="mt-2 space-y-1 text-sm">
           <li>
             API: <strong>{apiStatus}</strong>
           </li>

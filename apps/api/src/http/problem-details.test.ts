@@ -10,7 +10,7 @@ describe('problem details', () => {
   it('returns 404 for unknown routes', async () => {
     const { app } = await createTestApp();
 
-    const response = await request(app).get('/api/unknown');
+    const response = await request(app).get('/unknown');
 
     expect(response.status).toBe(404);
     expect(response.headers['content-type']).toMatch(/^application\/problem\+json/);
@@ -18,8 +18,8 @@ describe('problem details', () => {
       type: 'about:blank',
       title: 'Not Found',
       status: 404,
-      detail: 'No route matches GET /api/unknown',
-      instance: '/api/unknown',
+      detail: 'No route matches GET /unknown',
+      instance: '/unknown',
       requestId: 'req-1',
     });
   });
