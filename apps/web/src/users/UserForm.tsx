@@ -9,7 +9,7 @@ import {
   type Role,
 } from '@salary/shared';
 import { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { SelectField } from '../components/select-field.tsx';
 import { TextField } from '../components/text-field.tsx';
@@ -86,27 +86,42 @@ export function UserForm({
         error={errors.email}
         {...form.register('email')}
       />
-      <SelectField id="user-role" label="Role" error={errors.role} {...form.register('role')}>
-        <option value="">Choose a role</option>
-        <option value="global_hr">{ROLE_LABELS.global_hr} (all countries)</option>
-        <option value="country_hr">{ROLE_LABELS.country_hr} (one country)</option>
-      </SelectField>
-      <SelectField
-        id="user-country"
-        label="Country"
-        disabled={role !== 'country_hr'}
-        error={errors.countryCode}
-        {...form.register('countryCode', {
-          setValueAs: (value: string | null) => (value === '' ? null : value),
-        })}
-      >
-        <option value="">Choose a country</option>
-        {COUNTRY_CODES.map((code) => (
-          <option key={code} value={code}>
-            {COUNTRIES[code].name}
-          </option>
-        ))}
-      </SelectField>
+      <Controller
+        control={form.control}
+        name="role"
+        render={({ field }) => (
+          <SelectField
+            id="user-role"
+            label="Role"
+            placeholder="Choose a role"
+            value={field.value}
+            onValueChange={field.onChange}
+            error={errors.role}
+            options={[
+              { value: 'global_hr', label: `${ROLE_LABELS.global_hr} (all countries)` },
+              { value: 'country_hr', label: `${ROLE_LABELS.country_hr} (one country)` },
+            ]}
+          />
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="countryCode"
+        render={({ field }) => (
+          <SelectField
+            id="user-country"
+            label="Country"
+            placeholder="Choose a country"
+            value={field.value ?? ''}
+            onValueChange={(value) => {
+              field.onChange(value === '' ? null : value);
+            }}
+            disabled={role !== 'country_hr'}
+            error={errors.countryCode}
+            options={COUNTRY_CODES.map((code) => ({ value: code, label: COUNTRIES[code].name }))}
+          />
+        )}
+      />
       <div className="flex gap-2 sm:col-span-2">
         <Button type="submit" disabled={pending}>
           {pending ? 'Saving...' : submitLabel}

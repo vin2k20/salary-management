@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, mockApi, problem } from '../test/mock-api.ts';
 import { renderApp } from '../test/render-app.tsx';
+import { chooseOption } from '../test/select.ts';
 
 interface TestUser {
   id: string;
@@ -104,12 +105,12 @@ describe('UsersPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Add user' }));
     await user.type(screen.getByLabelText('Name'), 'New Person');
     await user.type(screen.getByLabelText('Email'), 'new.person@acme.example.com');
-    await user.selectOptions(screen.getByLabelText('Role'), 'country_hr');
+    await chooseOption(user, 'Role', 'Country HR (one country)');
     await user.click(screen.getByRole('button', { name: 'Add and send invite' }));
 
     expect(await screen.findByText('Choose the country this user manages')).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Role'), 'global_hr');
-    expect(screen.getByLabelText('Country')).toBeDisabled();
+    await chooseOption(user, 'Role', 'Global HR (all countries)');
+    expect(screen.getByRole('combobox', { name: 'Country' })).toBeDisabled();
     expect(calls.filter((call) => call.method === 'POST')).toEqual([]);
   });
 
@@ -135,8 +136,8 @@ describe('UsersPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Add user' }));
     await user.type(screen.getByLabelText('Name'), 'New Person');
     await user.type(screen.getByLabelText('Email'), 'New.Person@acme.example.com');
-    await user.selectOptions(screen.getByLabelText('Role'), 'country_hr');
-    await user.selectOptions(screen.getByLabelText('Country'), 'AU');
+    await chooseOption(user, 'Role', 'Country HR (one country)');
+    await chooseOption(user, 'Country', 'Australia');
     await user.click(screen.getByRole('button', { name: 'Add and send invite' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent(
@@ -163,7 +164,7 @@ describe('UsersPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Add user' }));
     await user.type(screen.getByLabelText('Name'), 'Sam Lee');
     await user.type(screen.getByLabelText('Email'), 'sam@acme.example.com');
-    await user.selectOptions(screen.getByLabelText('Role'), 'global_hr');
+    await chooseOption(user, 'Role', 'Global HR (all countries)');
     await user.click(screen.getByRole('button', { name: 'Add and send invite' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent(
@@ -181,7 +182,7 @@ describe('UsersPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Add user' }));
     await user.type(screen.getByLabelText('Name'), 'Priya Again');
     await user.type(screen.getByLabelText('Email'), 'priya@acme.example.com');
-    await user.selectOptions(screen.getByLabelText('Role'), 'global_hr');
+    await chooseOption(user, 'Role', 'Global HR (all countries)');
     await user.click(screen.getByRole('button', { name: 'Add and send invite' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -230,7 +231,8 @@ describe('UsersPage', () => {
     await screen.findByText('Priya Nair');
     await user.click(row('Priya Nair').getByRole('button', { name: 'Edit' }));
     expect(screen.getByLabelText('Name')).toHaveValue('Priya Nair');
-    await user.selectOptions(screen.getByLabelText('Country'), 'CA');
+    expect(screen.getByRole('combobox', { name: 'Country' })).toHaveTextContent('India');
+    await chooseOption(user, 'Country', 'Canada');
     await user.click(screen.getByRole('button', { name: 'Save changes' }));
 
     expect(await row('Priya Nair').findByText('Canada')).toBeInTheDocument();

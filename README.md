@@ -143,6 +143,18 @@ Global HR users manage HR users on the Users page:
 
 Every change is written to the change log with who made it (`GET /api/users/:id/change-log`). Country HR users cannot see or use these endpoints (403).
 
+## Employee directory
+
+The Employees page lists the employees in the user's scope with their annual total and monthly equivalent:
+
+- **Search** by part of a name or the start of an employee code, and **filter** by country (global HR only), region, department, job title and employment type. Inactive employees are hidden unless included.
+- **Sort** by name, job title, department, location or annual total. Annual totals are compared in US dollars, so the order makes sense across countries, whichever currency is shown.
+- **Page** through 25, 50 or 100 rows at a time.
+- Every filter, the sort and the page are kept in the URL, so a view can be bookmarked or shared.
+- Amounts follow the currency toggle; in US dollars the rate date is shown.
+
+The API does the searching, filtering, sorting and paging (`GET /api/employees`), always within the user's country scope; a country HR user who asks for another country gets an empty list. `GET /api/reference` gives the filter choices in scope.
+
 ## Exchange rates and currency
 
 - **Rates:** US dollar reference rates for CAD, AUD and INR come from the [Frankfurter API](https://frankfurter.dev) (central bank rates, no key). One row per currency and date is kept, so history is never overwritten; repeated refreshes for a date change nothing.
