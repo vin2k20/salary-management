@@ -9,7 +9,7 @@ import { errorHandler, notFoundHandler } from './http/problem-details.ts';
 import { requestLogger } from './http/request-logger.ts';
 import { authRouter, type AuthSettings } from './modules/auth/auth.routes.ts';
 import { requireAuth } from './modules/auth/require-auth.ts';
-import { employeesRouter } from './modules/employees/employees.routes.ts';
+import { employeesRouter, referenceRouter } from './modules/employees/employees.routes.ts';
 import type { RateProvider } from './modules/fx-rates/frankfurter-client.ts';
 import { fxRatesRouter, internalFxRatesRouter } from './modules/fx-rates/fx-rates.routes.ts';
 import { healthRouter } from './modules/health/health.routes.ts';
@@ -63,6 +63,7 @@ export function createApp({
   app.use('/api/users', usersRouter({ db, clock, emailSender, appUrl }));
   app.use('/api/fx-rates', fxRatesRouter({ db, clock, rateProvider }));
   app.use('/api/employees', employeesRouter({ db, clock }));
+  app.use('/api/reference', referenceRouter({ db }));
 
   app.use(notFoundHandler());
   app.use(errorHandler());
