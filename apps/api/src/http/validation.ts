@@ -14,3 +14,8 @@ export function parseBody<T extends z.ZodType>(schema: T, body: unknown): z.outp
   }
   return result.data;
 }
+
+/** Parses query parameters with a shared schema, or throws a 400 with a message per field. */
+export function parseQuery<T extends z.ZodType>(schema: T, query: unknown): z.output<T> {
+  return parseBody(schema, query);
+}

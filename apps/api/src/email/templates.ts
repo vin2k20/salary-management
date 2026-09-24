@@ -34,3 +34,29 @@ export function resetPasswordEmail(
     ].join('\n'),
   };
 }
+
+/** Email with a link to accept an invite and choose a first password. */
+export function inviteEmail(
+  user: { email: string; name: string },
+  invitedBy: string,
+  link: string,
+): EmailMessage {
+  return {
+    to: { email: user.email, name: user.name },
+    subject: 'You are invited to ACME Salary Management',
+    text: [
+      `Hello ${user.name},`,
+      '',
+      `${invitedBy} has added you to ACME Salary Management.`,
+      `Choose your password here: ${link}`,
+      '',
+      'The link works once, for 72 hours. If it has expired, ask for a new invite.',
+    ].join('\n'),
+    html: [
+      `<p>Hello ${escapeHtml(user.name)},</p>`,
+      `<p>${escapeHtml(invitedBy)} has added you to ACME Salary Management.</p>`,
+      `<p><a href="${escapeHtml(link)}">Choose your password</a></p>`,
+      '<p>The link works once, for 72 hours. If it has expired, ask for a new invite.</p>',
+    ].join('\n'),
+  };
+}

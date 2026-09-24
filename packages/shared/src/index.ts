@@ -53,3 +53,24 @@ export {
   type Role,
   type SetPasswordRequest,
 } from './auth.ts';
+export { emailSchema } from './auth.ts';
+export {
+  USER_STATUSES,
+  changeLogEntrySchema,
+  changeLogResponseSchema,
+  checkRoleAndCountry,
+  createUserRequestSchema,
+  createUserResponseSchema,
+  updateUserRequestSchema,
+  userListQuerySchema,
+  userListResponseSchema,
+  userSummarySchema,
+  type ChangeLogEntry,
+  type ChangeLogResponse,
+  type CreateUserRequest,
+  type CreateUserResponse,
+  type UpdateUserRequest,
+  type UserListResponse,
+  type UserStatus,
+  type UserSummary,
+} from './users.ts';

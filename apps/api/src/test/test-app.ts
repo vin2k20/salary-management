@@ -2,7 +2,7 @@ import type { Express } from 'express';
 import { createApp } from '../app.ts';
 import type { Clock } from '../clock.ts';
 import type { Database } from '../db/client.ts';
-import type { EmailMessage } from '../email/email-sender.ts';
+import type { EmailMessage, EmailSender } from '../email/email-sender.ts';
 import { createLogger } from '../logger.ts';
 import { createRecordingEmailSender } from './email.ts';
 import { createTestDatabase, type TestDatabase } from './test-database.ts';
@@ -37,7 +37,12 @@ export function sharedTestDatabase(): Promise<TestDatabase> {
  * email sender that records messages and, unless one is given, the shared test database.
  */
 export async function createTestApp(
-  options: { db?: Database; clock?: Clock; secureCookies?: boolean } = {},
+  options: {
+    db?: Database;
+    clock?: Clock;
+    secureCookies?: boolean;
+    emailSender?: EmailSender;
+  } = {},
 ): Promise<{ app: Express; logLines: LogLine[]; emails: EmailMessage[] }> {
   const logLines: LogLine[] = [];
   const logger = createLogger('info', {
@@ -46,7 +51,8 @@ export async function createTestApp(
     },
   });
   const db = options.db ?? (await sharedTestDatabase()).db;
-  const emailSender = createRecordingEmailSender();
+  const recorder = createRecordingEmailSender();
+  const emailSender = options.emailSender ?? recorder;
   const app = createApp({
     logger,
     db,
@@ -56,5 +62,5 @@ export async function createTestApp(
     appUrl: TEST_APP_URL,
     generateRequestId: () => 'req-1',
   });
-  return { app, logLines, emails: emailSender.sent };
+  return { app, logLines, emails: recorder.sent };
 }
