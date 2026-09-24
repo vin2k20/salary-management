@@ -1,6 +1,6 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
-import { employees, payChanges, payComponents, payItems } from '../db/schema.ts';
+import { employees, payChanges, payComponents, payItems, users } from '../db/schema.ts';
 
 type NewEmployee = typeof employees.$inferInsert;
 
@@ -68,4 +68,20 @@ type NewPayItem = typeof payItems.$inferInsert;
 /** Inserts a pay item. */
 export async function insertPayItem(db: Database, values: NewPayItem) {
   await db.insert(payItems).values(values);
+}
+
+/** Inserts an HR user. Without a password hash the user cannot sign in. */
+export async function insertUser(db: Database, overrides: Partial<typeof users.$inferInsert> = {}) {
+  sequence += 1;
+  const [user] = await db
+    .insert(users)
+    .values({
+      email: `user${String(sequence)}@acme.example.com`,
+      name: `Test User ${String(sequence)}`,
+      role: 'global_hr',
+      ...overrides,
+    })
+    .returning();
+  if (!user) throw new Error('User was not inserted');
+  return user;
 }
