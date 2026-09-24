@@ -12,6 +12,7 @@
     "db:migrate": "node --env-file-if-exists=.env src/scripts/migrate.ts"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/express": "^5.0.6",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
