@@ -155,6 +155,18 @@ The Employees page lists the employees in the user's scope with their annual tot
 
 The API does the searching, filtering, sorting and paging (`GET /api/employees`), always within the user's country scope; a country HR user who asks for another country gets an empty list. `GET /api/reference` gives the filter choices in scope.
 
+## Employee record
+
+Each employee has a page with their details, the fields that apply in their country and a change log. From the directory, HR users can open an employee or add one:
+
+- **Add and edit:** the form asks for the country first, then offers that country's states, provinces or territories and its own fields: FLSA status in the United States, the award or agreement in Australia, and whether PF and ESI apply in India. Country HR users can only add employees in their own country.
+- **Employee codes** are stored in upper case, must be unique (a duplicate answers 409) and cannot be changed later.
+- **Job titles and departments** suggest the values already in use as you type, and a new value reuses the spelling already stored, so "software engineer" joins "Software Engineer"."
+- **Mark inactive** asks for the inactive date first (today by default). Inactive employees keep their details and history, drop out of the directory unless included, and can be marked active again.
+- **Change log:** every change is listed with who made it, when, and the old and new values.
+
+The API endpoints are `GET` and `PATCH /api/employees/:id`, `POST /api/employees` and `GET /api/employees/:id/change-log`. Records outside a country HR user's scope answer 404.
+
 ## Exchange rates and currency
 
 - **Rates:** US dollar reference rates for CAD, AUD and INR come from the [Frankfurter API](https://frankfurter.dev) (central bank rates, no key). One row per currency and date is kept, so history is never overwritten; repeated refreshes for a date change nothing.
