@@ -50,6 +50,13 @@
       "when": 1790247440012,
       "tag": "0006_pay-changes-and-items",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790247480293,
+      "tag": "0007_fx-rates",
+      "breakpoints": true
     }
   ]
 }

@@ -14,6 +14,7 @@ import {
   jsonb,
   numeric,
   pgTable,
+  primaryKey,
   smallint,
   text,
   timestamp,
@@ -187,5 +188,26 @@ export const payItems = pgTable(
     uniqueIndex('pay_items_one_open_item_idx')
       .on(table.employeeId, table.componentId)
       .where(sql`${table.effectiveTo} is null`),
+  ],
+);
+
+/**
+ * Exchange rates per currency and date, as units of the currency per US dollar. History is kept
+ * so earlier figures can be reproduced. The rate is an exact decimal, read as a string.
+ */
+export const fxRates = pgTable(
+  'fx_rates',
+  {
+    currencyCode: char('currency_code', { length: 3 })
+      .notNull()
+      .references(() => currencies.code),
+    rateDate: date('rate_date', { mode: 'string' }).notNull(),
+    unitsPerUsd: numeric('units_per_usd', { precision: 18, scale: 8 }).notNull(),
+    source: text('source').notNull(),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.currencyCode, table.rateDate] }),
+    check('fx_rates_units_per_usd_check', sql`${table.unitsPerUsd} > 0`),
   ],
 );
