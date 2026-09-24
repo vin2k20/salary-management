@@ -8,6 +8,7 @@ export interface ProblemDetails {
   status: number;
   detail?: string;
   instance: string;
+  requestId?: string;
 }
 
 const clientErrorDetails: Record<string, string> = {
@@ -25,8 +26,13 @@ export function problem(status: number, instance: string, detail?: string): Prob
   };
 }
 
+/** Sends a problem details response, adding the request ID so it can be found in the logs. */
 export function sendProblem(res: Response, body: ProblemDetails): void {
-  res.status(body.status).type('application/problem+json').json(body);
+  const requestId = res.getHeader('X-Request-Id');
+  res
+    .status(body.status)
+    .type('application/problem+json')
+    .json(typeof requestId === 'string' ? { ...body, requestId } : body);
 }
 
 export function notFoundHandler(): RequestHandler {
@@ -37,7 +43,7 @@ export function notFoundHandler(): RequestHandler {
 
 /**
  * Turns errors into problem details. Client errors raised by Express middleware keep their
- * status; anything else becomes a 500 without internal details.
+ * status; anything else becomes a 500 without internal details, and the full error is logged.
  */
 export function errorHandler(): ErrorRequestHandler {
   return (error: unknown, req, res, next) => {
@@ -52,6 +58,8 @@ export function errorHandler(): ErrorRequestHandler {
       return;
     }
 
+    // Logged by the request logger with the request ID; never sent to the client.
+    res.err = error instanceof Error ? error : new Error(String(error));
     sendProblem(res, problem(500, req.path));
   };
 }
