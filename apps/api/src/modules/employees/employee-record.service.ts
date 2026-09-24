@@ -9,20 +9,21 @@ import {
   type CurrentUser,
   type DetailIssue,
   type Employee,
+  type TransferRequest,
   type UpdateEmployeeRequest,
 } from '@salary/shared';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import type { Clock } from '../../clock.ts';
+import { todayOn, type Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { isUniqueViolation } from '../../db/errors.ts';
 import { employees } from '../../db/schema.ts';
 import { HttpError, RequestValidationError } from '../../http/errors.ts';
 import { scopeCondition, type Scope } from '../auth/scope.ts';
 import { diffFields, recordChange } from '../change-log/change-log.ts';
-import { loadComponents } from '../compensation/pay.repository.ts';
-import { planPayChange } from '../compensation/pay-rules.ts';
-import { savePayPlan } from '../compensation/pay.service.ts';
+import { loadComponents, loadPayState, lockEmployee } from '../compensation/pay.repository.ts';
+import { planPayChange, planTransfer } from '../compensation/pay-rules.ts';
+import { savePayPlan, throwIfInvalid } from '../compensation/pay.service.ts';
 import { findEmployeeOrThrow, type EmployeeRecord } from './employees.repository.ts';
 
 export function toEmployee(row: EmployeeRecord): Employee {
@@ -249,5 +250,71 @@ export async function updateEmployee(
       clock,
     );
     return updated;
+  });
+}
+
+/**
+ * Moves an employee to another country (D35, global HR only). In one transaction the country,
+ * region and country fields change, all current pay ends on the effective date and the new pay
+ * starts in the new country's currency with the reason "transfer". Both are logged.
+ */
+export async function transferEmployee(
+  db: Database,
+  scope: Scope,
+  id: string,
+  request: TransferRequest,
+  actor: CurrentUser,
+  clock: Clock,
+): Promise<Employee> {
+  return db.transaction(async (tx) => {
+    const row = await lockEmployee(tx, scope, id);
+    if (!row) throw new HttpError(404, 'Employee not found');
+    if (row.status !== 'active') {
+      throw new HttpError(409, 'Mark the employee active before moving them');
+    }
+    const before = toEmployee(row);
+    const state = await loadPayState(tx, scope, row);
+    const components = await loadComponents(tx, scope, [
+      ...request.items.map((line) => line.componentId),
+      ...state.openItems.map((item) => item.componentId),
+    ]);
+    const plan = throwIfInvalid(planTransfer(state, request, components, todayOn(clock)));
+
+    const [updated] = await tx
+      .update(employees)
+      .set({
+        countryCode: request.countryCode,
+        region: request.region,
+        countryFields: request.countryFields,
+        updatedAt: clock.now(),
+      })
+      .where(eq(employees.id, id))
+      .returning();
+    if (!updated) throw new HttpError(404, 'Employee not found');
+    const after = toEmployee(updated);
+    await recordChange(
+      tx,
+      {
+        entityType: 'employee',
+        entityId: id,
+        action: 'transferred',
+        changes: diffFields(loggedFields(before), loggedFields(after)),
+        countryCode: after.countryCode,
+        changedBy: actor.id,
+      },
+      clock,
+    );
+    await savePayPlan(tx, {
+      scope,
+      employee: after,
+      effectiveFrom: request.effectiveFrom,
+      reason: 'transfer',
+      note: null,
+      plan,
+      openItems: state.openItems,
+      actor,
+      clock,
+    });
+    return after;
   });
 }

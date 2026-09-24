@@ -1,6 +1,7 @@
 import {
   createEmployeeRequestSchema,
   employeeListQuerySchema,
+  transferRequestSchema,
   updateEmployeeRequestSchema,
   type ChangeLogResponse,
   type EmployeeDetailResponse,
@@ -14,7 +15,13 @@ import { HttpError } from '../../http/errors.ts';
 import { parseBody, parseQuery } from '../../http/validation.ts';
 import { changeLogFor } from '../change-log/change-log.ts';
 import { currentTotals } from '../compensation/pay.service.ts';
-import { createEmployee, toEmployee, updateEmployee } from './employee-record.service.ts';
+import { requireRole } from '../auth/require-role.ts';
+import {
+  createEmployee,
+  toEmployee,
+  transferEmployee,
+  updateEmployee,
+} from './employee-record.service.ts';
 import { findEmployeeOrThrow } from './employees.repository.ts';
 import { employeeDirectory } from './employees.service.ts';
 import { referenceData } from './reference.service.ts';
@@ -68,6 +75,20 @@ export function employeesRouter({ db, clock }: { db: Database; clock: Clock }): 
     };
     res.json(body);
   });
+
+  router.post(
+    '/:id/transfer',
+    requireRole('global_hr', 'Only global HR users can move employees between countries'),
+    async (req, res) => {
+      const { user, scope } = signedIn(req);
+      const id = employeeId(req);
+      const request = parseBody(transferRequestSchema, req.body);
+      const body: EmployeeResponse = {
+        employee: await transferEmployee(db, scope, id, request, user, clock),
+      };
+      res.json(body);
+    },
+  );
 
   router.get('/:id/change-log', async (req, res) => {
     const { scope } = signedIn(req);
