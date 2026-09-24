@@ -24,6 +24,27 @@ export function employeeValues(overrides: Partial<NewEmployee> = {}): NewEmploye
   };
 }
 
+/** A valid POST /api/employees body for India; tests override the fields they care about. */
+export function newEmployeeRequest(overrides: Record<string, unknown> = {}) {
+  sequence += 1;
+  return {
+    employeeCode: `REC-${String(sequence).padStart(4, '0')}`,
+    firstName: 'Aarav',
+    lastName: 'Sharma',
+    email: `aarav.sharma${String(sequence)}@acme.example.com`,
+    jobTitle: 'Software Engineer',
+    jobLevel: 'L2',
+    department: 'Engineering',
+    countryCode: 'IN',
+    region: 'Karnataka',
+    employmentType: 'full_time',
+    fte: 1,
+    hireDate: '2025-06-02',
+    countryFields: { pfApplicable: true, esiApplicable: false },
+    ...overrides,
+  };
+}
+
 /** Inserts an employee and returns it. */
 export async function insertEmployee(db: Database, overrides: Partial<NewEmployee> = {}) {
   const [employee] = await db.insert(employees).values(employeeValues(overrides)).returning();
