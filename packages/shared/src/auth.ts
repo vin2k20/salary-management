@@ -7,7 +7,7 @@ export const ROLES = ['global_hr', 'country_hr'] as const;
 export type Role = (typeof ROLES)[number];
 
 /** Email typed by a user: trimmed and lower case, as stored. */
-const emailSchema = z
+export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
