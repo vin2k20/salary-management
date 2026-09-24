@@ -1,1 +1,1 @@
-export const APP_NAME = 'Salary Management';
+export { healthResponseSchema, type HealthResponse } from './health.ts';

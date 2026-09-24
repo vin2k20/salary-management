@@ -1,0 +1,24 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+}
+
+.app-header {
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.app-name {
+  font-weight: 600;
+}
+
+.app-main {
+  padding: 1.5rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}

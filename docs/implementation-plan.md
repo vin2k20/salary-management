@@ -737,7 +737,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 |---|---|---|---|---|
 | 00 | Done | Committed directly on `main` (D37) | 24 Sep 2026 | No pull request for this step |
 | 01 | Done | [#1](https://github.com/vin2k20/salary-management/pull/1) | 24 Sep 2026 | TypeScript 6.0 until typescript-eslint supports 7 (D38) |
-| 02 | Not started | | | |
+| 02 | Done | [#2](https://github.com/vin2k20/salary-management/pull/2) | 24 Sep 2026 | Workflow runs on every push and on pull requests to main |
 | 03 | Not started | | | |
 | 04 | Not started | | | |
 | 05 | Not started | | | |

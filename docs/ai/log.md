@@ -19,3 +19,4 @@ A short record of the work on this project, from start to end. The work is done 
 | 24 Sep 2026 | Step 00: started the Git repository with the base configuration files, a README outline, the project rules and all design documents, and pushed it to GitHub. |
 | 24 Sep 2026 | Step 01: set up npm workspaces for the API, web app and shared package, with strict TypeScript, ESLint, Prettier, Vitest and root scripts to lint, type check, test and build. |
 | 24 Sep 2026 | Step 02: added continuous integration with GitHub Actions that runs lint, format check, type check, tests and build on every push and pull request. |
+| 24 Sep 2026 | Step 03: built the walking skeleton: an Express API with a health endpoint, security headers, request IDs, structured logs and problem details errors, and a React home page that shows the API status through the Vite proxy. |
