@@ -12,6 +12,8 @@ export interface Config extends ScriptConfig {
   jwtSecret: string;
   trustProxy: boolean;
   appUrl: string;
+  /** Secret for the scheduled rates refresh; null when not set, which switches it off. */
+  ratesRefreshSecret: string | null;
   email:
     | { transport: 'console' }
     | { transport: 'brevo'; apiKey: string; from: { email: string; name: string } };
@@ -36,6 +38,10 @@ const serverEnvSchema = scriptEnvSchema.extend({
   BREVO_API_KEY: z.string().optional(),
   EMAIL_FROM: z.email('EMAIL_FROM must be an email address').optional(),
   EMAIL_FROM_NAME: z.string().default('ACME Salary Management'),
+  RATES_REFRESH_SECRET: z
+    .string()
+    .min(32, 'RATES_REFRESH_SECRET must be at least 32 characters')
+    .optional(),
 });
 
 function parse<T extends z.ZodType>(schema: T, env: Record<string, string | undefined>) {
@@ -71,6 +77,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     jwtSecret: data.JWT_SECRET,
     trustProxy: data.TRUST_PROXY === 'true',
     appUrl: data.APP_URL,
+    ratesRefreshSecret: data.RATES_REFRESH_SECRET ?? null,
     email:
       data.EMAIL_TRANSPORT === 'brevo'
         ? {

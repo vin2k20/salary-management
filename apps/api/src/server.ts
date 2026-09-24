@@ -4,6 +4,7 @@ import { loadConfig } from './config.ts';
 import { createDatabase } from './db/client.ts';
 import { createBrevoEmailSender } from './email/brevo-email-sender.ts';
 import { createConsoleEmailSender } from './email/email-sender.ts';
+import { createFrankfurterClient } from './modules/fx-rates/frankfurter-client.ts';
 import { createLogger } from './logger.ts';
 
 const config = loadConfig(process.env);
@@ -21,6 +22,8 @@ const app = createApp({
   trustProxy: config.trustProxy,
   emailSender,
   appUrl: config.appUrl,
+  rateProvider: createFrankfurterClient(),
+  ratesRefreshSecret: config.ratesRefreshSecret,
 });
 
 const server = app.listen(config.port, (error) => {
