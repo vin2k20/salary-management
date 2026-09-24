@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, indiaHrUser, mockApi } from '../test/mock-api.ts';
 import { renderApp } from '../test/render-app.tsx';
+import { chooseOption } from '../test/select.ts';
 
 const reference = {
   countries: [
@@ -100,7 +101,7 @@ describe('EmployeesPage', () => {
       currency: 'local',
     });
     expect(screen.getByLabelText('Search')).toHaveValue('sharma');
-    expect(screen.getByLabelText('Department')).toHaveValue('Engineering');
+    expect(screen.getByRole('combobox', { name: 'Department' })).toHaveTextContent('Engineering');
     expect(screen.getByLabelText('Include inactive employees')).toBeChecked();
   });
 
@@ -123,10 +124,9 @@ describe('EmployeesPage', () => {
     const { router } = renderApp('/employees');
     const user = userEvent.setup();
 
-    // Filter choices come from the reference data, so wait for them.
-    await screen.findByRole('option', { name: 'Sales' });
-    await user.selectOptions(screen.getByLabelText('Department'), 'Sales');
-    await user.selectOptions(screen.getByLabelText('Employment type'), 'contractor');
+    await screen.findByRole('table');
+    await chooseOption(user, 'Department', 'Sales');
+    await chooseOption(user, 'Employment type', 'Contractor');
     await user.click(screen.getByLabelText('Include inactive employees'));
 
     expect(new URLSearchParams(router.state.location.search).toString()).toBe(
@@ -210,7 +210,37 @@ describe('EmployeesPage', () => {
     renderApp('/employees');
 
     await screen.findByRole('table');
-    expect(screen.queryByLabelText('Country')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Region')).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Country' })).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Region' })).toBeInTheDocument();
+  });
+});
+
+describe('EmployeesPage dropdowns', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('shows "All" when a filter is not set and clears it again', async () => {
+    directoryApi();
+    const { router } = renderApp('/employees?department=Sales');
+    const user = userEvent.setup();
+
+    await screen.findByRole('table');
+    await chooseOption(user, 'Department', 'All departments');
+
+    expect(screen.getByRole('combobox', { name: 'Department' })).toHaveTextContent(
+      'All departments',
+    );
+    expect(router.state.location.search).toBe('');
+  });
+
+  it('changes the rows per page', async () => {
+    directoryApi();
+    const { router } = renderApp('/employees');
+
+    await screen.findByRole('table');
+    await chooseOption(userEvent.setup(), 'Rows per page', '100');
+
+    expect(router.state.location.search).toBe('?pageSize=100');
   });
 });
