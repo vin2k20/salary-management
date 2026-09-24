@@ -19,7 +19,7 @@ describe('protected routes', () => {
   it('reject every API route without a session, before revealing whether it exists', async () => {
     const { app } = await createTestApp();
 
-    const response = await request(app).get('/api/employees');
+    const response = await request(app).get('/api/not-a-route');
 
     expect(response.status).toBe(401);
     expect(response.body).toMatchObject({ title: 'Unauthorized', detail: 'Sign in to continue' });
@@ -29,7 +29,7 @@ describe('protected routes', () => {
     const { app } = await createTestApp();
 
     const response = await request(app)
-      .get('/api/employees')
+      .get('/api/not-a-route')
       .set('Cookie', await sessionCookieFor(user));
 
     expect(response.status).toBe(404);
