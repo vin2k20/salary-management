@@ -101,3 +101,23 @@ export {
   type Money,
   type ReferenceData,
 } from './employee-list.ts';
+export {
+  COUNTRY_FIELD_KEYS,
+  FLSA_STATUSES,
+  countryDetailIssues,
+  countryFieldsSchema,
+  createEmployeeRequestSchema,
+  employeeResponseSchema,
+  employeeSchema,
+  inactiveDateIssue,
+  updateEmployeeRequestSchema,
+  type CountryFieldKey,
+  type CountryFields,
+  type CreateEmployeeRequest,
+  type DetailIssue,
+  type Employee,
+  type EmployeeResponse,
+  type FlsaStatus,
+  type UpdateEmployeeRequest,
+} from './employee-record.ts';
+export { REGIONS, REGION_LABELS } from './regions.ts';
