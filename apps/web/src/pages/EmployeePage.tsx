@@ -1,16 +1,34 @@
+import type { UpdateEmployeeRequest } from '@salary/shared';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useParams } from 'react-router';
 import { errorMessage } from '../api/errors.ts';
 import { Alert } from '../components/ui/alert.tsx';
-import { ButtonLink } from '../components/ui/button.tsx';
+import { Button, ButtonLink } from '../components/ui/button.tsx';
 import { Card, CardContent } from '../components/ui/card.tsx';
 import { EmployeeDetails } from '../employees/EmployeeDetails.tsx';
-import { useEmployee } from '../employees/api.ts';
+import { MarkInactivePanel } from '../employees/MarkInactivePanel.tsx';
+import { employeeSaved, updateEmployee, useEmployee } from '../employees/api.ts';
 
 /** One employee's record: details, actions and history (HLD 3.1). */
 export function EmployeePage() {
   const { id = '' } = useParams();
   const employee = useEmployee(id);
   const data = employee.data;
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const setStatus = useMutation({
+    mutationFn: (change: UpdateEmployeeRequest) => updateEmployee(id, change),
+    onSuccess: async (updated) => {
+      setConfirming(false);
+      const name = `${updated.firstName} ${updated.lastName}`;
+      setNotice(
+        updated.status === 'inactive' ? `${name} was marked inactive.` : `${name} is active again.`,
+      );
+      await employeeSaved(queryClient, updated);
+    },
+  });
 
   return (
     <>
@@ -39,12 +57,59 @@ export function EmployeePage() {
                 {data.jobTitle}, {data.department}
               </p>
             </div>
-            <div className="flex gap-2">
-              <ButtonLink to={`/employees/${data.id}/edit`} variant="secondary">
-                Edit
-              </ButtonLink>
-            </div>
+            {!confirming && (
+              <div className="flex gap-2">
+                <ButtonLink to={`/employees/${data.id}/edit`} variant="secondary">
+                  Edit
+                </ButtonLink>
+                {data.status === 'active' ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setStatus.reset();
+                      setNotice(null);
+                      setConfirming(true);
+                    }}
+                  >
+                    Mark inactive
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    disabled={setStatus.isPending}
+                    onClick={() => {
+                      setStatus.mutate({ status: 'active' });
+                    }}
+                  >
+                    Mark active
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
+
+          {notice && (
+            <p role="status" className="mt-4 rounded-md border px-4 py-3 text-sm">
+              {notice}
+            </p>
+          )}
+          {!confirming && setStatus.isError && (
+            <Alert className="mt-4">{errorMessage(setStatus.error)}</Alert>
+          )}
+          {confirming && (
+            <MarkInactivePanel
+              name={`${data.firstName} ${data.lastName}`}
+              hireDate={data.hireDate}
+              pending={setStatus.isPending}
+              error={errorMessage(setStatus.error)}
+              onConfirm={(inactiveOn) => {
+                setStatus.mutate({ status: 'inactive', inactiveOn });
+              }}
+              onCancel={() => {
+                setConfirming(false);
+              }}
+            />
+          )}
 
           <Card className="mt-6">
             <CardContent className="pt-6">
