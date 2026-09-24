@@ -82,6 +82,7 @@ The API reads its settings from environment variables and stops at start-up if a
 | `EMAIL_TRANSPORT` | `console` | `console` writes emails, including reset links, to the API log; `brevo` sends them |
 | `BREVO_API_KEY` | none, needed for `brevo` | Brevo API key (starts with `xkeysib-`) |
 | `EMAIL_FROM` | none, needed for `brevo` | Sender address verified in Brevo |
+| `RATES_REFRESH_SECRET` | none | Shared with the daily GitHub Actions refresh; at least 32 characters. Without it the scheduled refresh endpoint is off, and global HR users can still refresh by hand |
 | `TRUST_PROXY` | `false` | `true` behind Vercel and Render, so the login rate limit sees the client IP address |
 | `PORT` | `3000` | Port the API listens on |
 | `LOG_LEVEL` | `info` | pino log level: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
@@ -142,6 +143,13 @@ Global HR users manage HR users on the Users page:
 
 Every change is written to the change log with who made it (`GET /api/users/:id/change-log`). Country HR users cannot see or use these endpoints (403).
 
+## Exchange rates and currency
+
+- **Rates:** US dollar reference rates for CAD, AUD and INR come from the [Frankfurter API](https://frankfurter.dev) (central bank rates, no key). One row per currency and date is kept, so history is never overwritten; repeated refreshes for a date change nothing.
+- **Daily refresh:** the GitHub Actions workflow `Refresh exchange rates` (`.github/workflows/refresh-rates.yml`) runs every day at 06:30 UTC and can be run by hand from the Actions tab. It calls `POST /api/internal/fx-rates/refresh` on Render with `Authorization: Bearer <RATES_REFRESH_SECRET>`, retrying for about two minutes while the free API wakes up. The same secret is a repository secret in GitHub and an environment variable in Render.
+- **By hand:** global HR users can press **Refresh rates** on the dashboard.
+- **Currency toggle:** the header switches every amount between local currency and US dollars. The choice is kept in the URL (`?currency=USD`), so a shared link shows the same view, and in the browser for next time. Converted amounts show the date of the rates used, and the dashboard warns when rates are more than three days old.
+
 ## Password reset and invites
 
 - **Forgot password:** the sign-in page links to a form that emails a reset link. The API answers the same way whether or not the email has an account, and sends at most three links per email in 15 minutes.
@@ -170,7 +178,7 @@ How it fits together:
 - A merge to `main` deploys both parts. Vercel builds the web app. Render deploys the API only after the CI workflow has passed on the commit, and only when API, shared or root package files change.
 - Each pull request gets a Vercel preview deployment. Previews need a Vercel login and call the production API.
 - The Render build runs `npm ci --omit=dev` and then applies database migrations, so they run before the new version starts. A failed migration fails the deploy and the running version stays up.
-- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV`, `LOG_LEVEL`, `TRUST_PROXY`, `APP_URL` and `EMAIL_TRANSPORT` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch), `JWT_SECRET`, `BREVO_API_KEY`, `EMAIL_FROM` and later secrets are set in the Render dashboard and never committed.
+- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV`, `LOG_LEVEL`, `TRUST_PROXY`, `APP_URL` and `EMAIL_TRANSPORT` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch), `JWT_SECRET`, `BREVO_API_KEY`, `EMAIL_FROM`, `RATES_REFRESH_SECRET` and later secrets are set in the Render dashboard and never committed.
 - The free Render service sleeps after 15 minutes without traffic and takes about a minute to wake. Open the app a few minutes before a demo.
 
 ## Demo

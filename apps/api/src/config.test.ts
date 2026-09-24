@@ -15,6 +15,7 @@ describe('loadConfig', () => {
       jwtSecret,
       trustProxy: false,
       appUrl: 'http://localhost:5173',
+      ratesRefreshSecret: null,
       email: { transport: 'console' },
     });
   });
@@ -85,6 +86,18 @@ describe('email settings', () => {
   it('refuses the console sender in production, since it logs reset links', () => {
     expect(() => loadConfig({ ...required, NODE_ENV: 'production' })).toThrow(
       /use brevo in production/,
+    );
+  });
+});
+
+describe('rates refresh secret', () => {
+  it('is read when set and must be long enough', () => {
+    const secret = 'a-rates-refresh-secret-of-32-chars!';
+    expect(loadConfig({ ...required, RATES_REFRESH_SECRET: secret }).ratesRefreshSecret).toBe(
+      secret,
+    );
+    expect(() => loadConfig({ ...required, RATES_REFRESH_SECRET: 'short' })).toThrow(
+      /RATES_REFRESH_SECRET must be at least 32 characters/,
     );
   });
 });

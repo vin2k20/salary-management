@@ -1,0 +1,33 @@
+name: Refresh exchange rates
+
+on:
+  schedule:
+    # Every day at 06:30 UTC. Central banks publish on working days; a run without new rates
+    # stores nothing.
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: Refresh exchange rates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      API_URL: https://acme-salary-api-oxu3.onrender.com
+    steps:
+      - name: Call the API refresh endpoint
+        env:
+          RATES_REFRESH_SECRET: ${{ secrets.RATES_REFRESH_SECRET }}
+        run: |
+          if [ -z "$RATES_REFRESH_SECRET" ]; then
+            echo "::error::The RATES_REFRESH_SECRET repository secret is not set."
+            exit 1
+          fi
+          # The free API sleeps when idle; the retries give it about two minutes to wake up.
+          curl --fail-with-body --silent --show-error \
+            --retry 6 --retry-delay 20 --retry-all-errors --max-time 90 \
+            -X POST -H "Authorization: Bearer ${RATES_REFRESH_SECRET}" \
+            "${API_URL}/api/internal/fx-rates/refresh"

@@ -9,6 +9,8 @@ import { errorHandler, notFoundHandler } from './http/problem-details.ts';
 import { requestLogger } from './http/request-logger.ts';
 import { authRouter, type AuthSettings } from './modules/auth/auth.routes.ts';
 import { requireAuth } from './modules/auth/require-auth.ts';
+import type { RateProvider } from './modules/fx-rates/frankfurter-client.ts';
+import { fxRatesRouter, internalFxRatesRouter } from './modules/fx-rates/fx-rates.routes.ts';
 import { healthRouter } from './modules/health/health.routes.ts';
 import { usersRouter } from './modules/users/users.routes.ts';
 
@@ -20,6 +22,9 @@ export interface AppDependencies {
   emailSender: EmailSender;
   /** Base address of the web app, for links in emails. */
   appUrl: string;
+  rateProvider: RateProvider;
+  /** Secret for the scheduled rates refresh; null switches that endpoint off. */
+  ratesRefreshSecret: string | null;
   /** Trust X-Forwarded-For from the proxies in front of the API (Vercel and Render). */
   trustProxy?: boolean;
   generateRequestId?: () => string;
@@ -32,6 +37,8 @@ export function createApp({
   auth,
   emailSender,
   appUrl,
+  rateProvider,
+  ratesRefreshSecret,
   trustProxy = false,
   generateRequestId,
 }: AppDependencies): Express {
@@ -45,10 +52,15 @@ export function createApp({
 
   app.use('/api/health', healthRouter(db));
   app.use('/api/auth', authRouter({ db, clock, auth, emailSender, appUrl }));
+  app.use(
+    '/api/internal/fx-rates',
+    internalFxRatesRouter({ db, clock, rateProvider, secret: ratesRefreshSecret }),
+  );
 
   // Everything else under /api needs a session, so unknown paths answer 401 before 404.
   app.use('/api', requireAuth({ db, clock, jwtSecret: auth.jwtSecret }));
   app.use('/api/users', usersRouter({ db, clock, emailSender, appUrl }));
+  app.use('/api/fx-rates', fxRatesRouter({ db, clock, rateProvider }));
 
   app.use(notFoundHandler());
   app.use(errorHandler());
