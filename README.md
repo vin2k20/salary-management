@@ -77,7 +77,11 @@ The API reads its settings from environment variables and stops at start-up if a
 | `DATABASE_URL` | none, required | PostgreSQL connection string. Locally, the pooled string of your Neon development branch (or a local PostgreSQL database), ending in `sslmode=verify-full` for Neon |
 | `JWT_SECRET` | none, required | Signs session tokens; at least 32 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` and use a different value in each environment |
 | `SEED_HR_PASSWORD` | none, needed by `db:seed` | Password for the demo HR users; at least 12 characters |
-| `NODE_ENV` | `development` | `production` makes the session cookie Secure (HTTPS only) |
+| `NODE_ENV` | `development` | `production` makes the session cookie Secure (HTTPS only) and requires Brevo for email |
+| `APP_URL` | `http://localhost:5173` | Web app address, used in links in emails |
+| `EMAIL_TRANSPORT` | `console` | `console` writes emails, including reset links, to the API log; `brevo` sends them |
+| `BREVO_API_KEY` | none, needed for `brevo` | Brevo API key (starts with `xkeysib-`) |
+| `EMAIL_FROM` | none, needed for `brevo` | Sender address verified in Brevo |
 | `TRUST_PROXY` | `false` | `true` behind Vercel and Render, so the login rate limit sees the client IP address |
 | `PORT` | `3000` | Port the API listens on |
 | `LOG_LEVEL` | `info` | pino log level: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
@@ -126,6 +130,12 @@ Every run also creates or updates the demo HR users, all with the password in `S
 
 The load runs in one transaction, so a failed run changes nothing. Against the Neon development branch it takes about 45 seconds.
 
+## Password reset and invites
+
+- **Forgot password:** the sign-in page links to a form that emails a reset link. The API answers the same way whether or not the email has an account, and sends at most three links per email in 15 minutes.
+- **Links:** each link carries a random single-use token; only its SHA-256 hash is stored. Reset links last 30 minutes and invite links 72 hours, and a new link replaces an older unused one. Setting a password ends every older session for that user and is recorded in the change log.
+- **Email:** Brevo sends the emails in production. Locally, `EMAIL_TRANSPORT=console` writes them to the API log, so you can open a link without an email account.
+
 ## Tests
 
 Each workspace uses Vitest, with test files next to the code they test (`*.test.ts`). Run all tests with `npm test`, or one workspace with `npm test -w @salary/api`. API and database tests run against PGlite, PostgreSQL in memory: each test file gets a fresh database with every migration applied, so tests need no running database or network. UI tests use React Testing Library, and a Playwright smoke test comes later.
@@ -148,7 +158,7 @@ How it fits together:
 - A merge to `main` deploys both parts. Vercel builds the web app. Render deploys the API only after the CI workflow has passed on the commit, and only when API, shared or root package files change.
 - Each pull request gets a Vercel preview deployment. Previews need a Vercel login and call the production API.
 - The Render build runs `npm ci --omit=dev` and then applies database migrations, so they run before the new version starts. A failed migration fails the deploy and the running version stays up.
-- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV`, `LOG_LEVEL` and `TRUST_PROXY` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch), `JWT_SECRET` and later secrets are set in the Render dashboard and never committed.
+- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV`, `LOG_LEVEL`, `TRUST_PROXY`, `APP_URL` and `EMAIL_TRANSPORT` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch), `JWT_SECRET`, `BREVO_API_KEY`, `EMAIL_FROM` and later secrets are set in the Render dashboard and never committed.
 - The free Render service sleeps after 15 minutes without traffic and takes about a minute to wake. Open the app a few minutes before a demo.
 
 ## Demo

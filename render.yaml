@@ -37,3 +37,12 @@ services:
       # X-Forwarded-For for the login rate limit.
       - key: TRUST_PROXY
         value: 'true'
+      - key: APP_URL
+        value: https://acme-salary-management-vineet.vercel.app
+      - key: EMAIL_TRANSPORT
+        value: brevo
+      # Brevo API key and a sender address verified in Brevo, set in the Render dashboard.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false

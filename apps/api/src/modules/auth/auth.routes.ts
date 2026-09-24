@@ -1,14 +1,23 @@
 import { randomUUID } from 'node:crypto';
-import { loginRequestSchema, type CurrentUserResponse } from '@salary/shared';
+import {
+  forgotPasswordRequestSchema,
+  loginRequestSchema,
+  setPasswordRequestSchema,
+  type CurrentUserResponse,
+} from '@salary/shared';
 import { Router, type CookieOptions } from 'express';
 import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
+import type { EmailSender } from '../../email/email-sender.ts';
+import { resetPasswordEmail } from '../../email/templates.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseBody } from '../../http/validation.ts';
-import { loginRateLimits } from './login-rate-limit.ts';
+import { issueAuthToken } from './auth-tokens.ts';
 import { hashPassword, verifyPassword } from './passwords.ts';
+import { forgotPasswordRateLimits, loginRateLimits, setPasswordRateLimits } from './rate-limits.ts';
 import { requireAuth } from './require-auth.ts';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, createSessionToken } from './session.ts';
+import { setPasswordWithToken } from './set-password.ts';
 import { findUserByEmail, recordLogin, toCurrentUser } from './users.repository.ts';
 
 export interface AuthSettings {
@@ -20,15 +29,16 @@ export interface AuthSettings {
 // Checked when the email is unknown, so a failed sign-in takes about the same time either way.
 let dummyHash: Promise<string> | undefined;
 
-export function authRouter({
-  db,
-  clock,
-  auth,
-}: {
+export interface AuthRouterOptions {
   db: Database;
   clock: Clock;
   auth: AuthSettings;
-}): Router {
+  emailSender: EmailSender;
+  /** Base address of the web app, for links in emails. */
+  appUrl: string;
+}
+
+export function authRouter({ db, clock, auth, emailSender, appUrl }: AuthRouterOptions): Router {
   const router = Router();
   const cookieOptions: CookieOptions = {
     httpOnly: true,
@@ -56,6 +66,30 @@ export function authRouter({
     res
       .cookie(SESSION_COOKIE, token, { ...cookieOptions, maxAge: SESSION_TTL_SECONDS * 1000 })
       .json(body);
+  });
+
+  router.post('/forgot-password', ...forgotPasswordRateLimits(), async (req, res) => {
+    const { email } = parseBody(forgotPasswordRequestSchema, req.body);
+    // Answer first, the same way for every email, so neither the answer nor its timing shows
+    // whether an account exists. The link is created and sent afterwards.
+    res.status(202).end();
+    try {
+      const user = await findUserByEmail(db, email);
+      if (!user?.isActive) return;
+      const token = await issueAuthToken(db, { userId: user.id, purpose: 'reset' }, clock);
+      const link = new URL(`/set-password?token=${token}`, appUrl).toString();
+      await emailSender.send(resetPasswordEmail(user, link));
+    } catch (error) {
+      req.log.error({ err: error }, 'Password reset email failed');
+    }
+  });
+
+  router.post('/set-password', ...setPasswordRateLimits(), async (req, res) => {
+    const request = parseBody(setPasswordRequestSchema, req.body);
+    if (!(await setPasswordWithToken(db, request, clock))) {
+      throw new HttpError(400, 'This link is invalid or has expired. Ask for a new one.');
+    }
+    res.status(204).end();
   });
 
   router.post('/logout', (_req, res) => {

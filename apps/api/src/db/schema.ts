@@ -285,3 +285,34 @@ export const users = pgTable(
     ),
   ],
 );
+
+export const AUTH_TOKEN_PURPOSES = ['reset', 'invite'] as const;
+
+export type AuthTokenPurpose = (typeof AUTH_TOKEN_PURPOSES)[number];
+
+/**
+ * Single-use tokens sent in password reset and invite links. Only a SHA-256 hash of the token is
+ * stored, so a copy of the database cannot be used to set passwords.
+ */
+export const authTokens = pgTable(
+  'auth_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    purpose: text('purpose', { enum: AUTH_TOKEN_PURPOSES }).notNull(),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('auth_tokens_token_hash_unique').on(table.tokenHash),
+    check(
+      'auth_tokens_purpose_check',
+      sql`${table.purpose} in ${allowedValues(AUTH_TOKEN_PURPOSES)}`,
+    ),
+    index('auth_tokens_user_id_purpose_idx').on(table.userId, table.purpose),
+  ],
+);

@@ -2,17 +2,25 @@ import { createApp } from './app.ts';
 import { systemClock } from './clock.ts';
 import { loadConfig } from './config.ts';
 import { createDatabase } from './db/client.ts';
+import { createBrevoEmailSender } from './email/brevo-email-sender.ts';
+import { createConsoleEmailSender } from './email/email-sender.ts';
 import { createLogger } from './logger.ts';
 
 const config = loadConfig(process.env);
 const logger = createLogger(config.logLevel);
 const database = createDatabase(config.databaseUrl);
+const emailSender =
+  config.email.transport === 'brevo'
+    ? createBrevoEmailSender({ apiKey: config.email.apiKey, from: config.email.from })
+    : createConsoleEmailSender(logger);
 const app = createApp({
   logger,
   db: database.db,
   clock: systemClock,
   auth: { jwtSecret: config.jwtSecret, secureCookies: config.nodeEnv === 'production' },
   trustProxy: config.trustProxy,
+  emailSender,
+  appUrl: config.appUrl,
 });
 
 const server = app.listen(config.port, (error) => {

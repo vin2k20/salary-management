@@ -742,7 +742,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 04 | Done | [#4](https://github.com/vin2k20/salary-management/pull/4), [#5](https://github.com/vin2k20/salary-management/pull/5), [#6](https://github.com/vin2k20/salary-management/pull/6) | 24 Sep 2026 | API and database in Ohio (D40); web app at acme-salary-management-vineet.vercel.app |
 | 05 | Done | [#7](https://github.com/vin2k20/salary-management/pull/7) | 24 Sep 2026 | Migrations run in the Render build (D41); totals function and rounding (D42) |
 | 06 | Done | [#8](https://github.com/vin2k20/salary-management/pull/8) | 24 Sep 2026 | Seed details (D43); reset and reload in about 45 seconds |
-| 07 | Not started | | | |
+| 07 | Done | [#9](https://github.com/vin2k20/salary-management/pull/9) | 24 Sep 2026 | Sign-in details (D44), web foundations (D45); rate limit sees the client IP in production |
 | 08 | Not started | | | |
 | 09 | Not started | | | |
 | 10 | Not started | | | |

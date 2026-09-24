@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import type { Logger } from 'pino';
 import type { Clock } from './clock.ts';
 import type { Database } from './db/client.ts';
+import type { EmailSender } from './email/email-sender.ts';
 import { errorHandler, notFoundHandler } from './http/problem-details.ts';
 import { requestLogger } from './http/request-logger.ts';
 import { authRouter, type AuthSettings } from './modules/auth/auth.routes.ts';
@@ -15,6 +16,9 @@ export interface AppDependencies {
   db: Database;
   clock: Clock;
   auth: AuthSettings;
+  emailSender: EmailSender;
+  /** Base address of the web app, for links in emails. */
+  appUrl: string;
   /** Trust X-Forwarded-For from the proxies in front of the API (Vercel and Render). */
   trustProxy?: boolean;
   generateRequestId?: () => string;
@@ -25,6 +29,8 @@ export function createApp({
   db,
   clock,
   auth,
+  emailSender,
+  appUrl,
   trustProxy = false,
   generateRequestId,
 }: AppDependencies): Express {
@@ -37,7 +43,7 @@ export function createApp({
   app.use(cookieParser());
 
   app.use('/api/health', healthRouter(db));
-  app.use('/api/auth', authRouter({ db, clock, auth }));
+  app.use('/api/auth', authRouter({ db, clock, auth, emailSender, appUrl }));
 
   // Everything else under /api needs a session, so unknown paths answer 401 before 404.
   app.use('/api', requireAuth({ db, clock, jwtSecret: auth.jwtSecret }));

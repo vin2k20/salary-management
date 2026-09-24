@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { currentUserSchema, loginRequestSchema } from './auth.ts';
+import {
+  currentUserSchema,
+  forgotPasswordRequestSchema,
+  loginRequestSchema,
+  setPasswordRequestSchema,
+} from './auth.ts';
 
 describe('loginRequestSchema', () => {
   it('trims and lowercases the email', () => {
@@ -45,5 +50,30 @@ describe('currentUserSchema', () => {
     expect(
       currentUserSchema.safeParse({ ...user, role: 'country_hr', countryCode: 'GB' }).success,
     ).toBe(false);
+  });
+});
+
+describe('forgotPasswordRequestSchema', () => {
+  it('normalises the email like the login form', () => {
+    expect(forgotPasswordRequestSchema.parse({ email: ' HR.IN@Acme.Example.com' })).toEqual({
+      email: 'hr.in@acme.example.com',
+    });
+    expect(forgotPasswordRequestSchema.safeParse({ email: 'nope' }).success).toBe(false);
+  });
+});
+
+describe('setPasswordRequestSchema', () => {
+  it('accepts a token and a password of at least twelve characters', () => {
+    expect(
+      setPasswordRequestSchema.safeParse({ token: 'abc', password: 'twelve chars' }).success,
+    ).toBe(true);
+  });
+
+  it('explains a short password or a missing token', () => {
+    const result = setPasswordRequestSchema.safeParse({ token: '', password: 'short' });
+    expect(result.error?.issues.map((issue) => [issue.path[0], issue.message])).toEqual([
+      ['token', 'The link is missing its token'],
+      ['password', 'Use at least 12 characters'],
+    ]);
   });
 });

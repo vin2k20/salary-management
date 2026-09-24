@@ -11,6 +11,10 @@ export interface Config extends ScriptConfig {
   nodeEnv: 'development' | 'test' | 'production';
   jwtSecret: string;
   trustProxy: boolean;
+  appUrl: string;
+  email:
+    | { transport: 'console' }
+    | { transport: 'brevo'; apiKey: string; from: { email: string; name: string } };
 }
 
 const scriptEnvSchema = z.object({
@@ -27,6 +31,11 @@ const serverEnvSchema = scriptEnvSchema.extend({
     .string({ error: 'JWT_SECRET is required' })
     .min(32, 'JWT_SECRET must be at least 32 characters'),
   TRUST_PROXY: z.enum(['true', 'false']).default('false'),
+  APP_URL: z.url('APP_URL must be the web app address').default('http://localhost:5173'),
+  EMAIL_TRANSPORT: z.enum(['console', 'brevo']).default('console'),
+  BREVO_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.email('EMAIL_FROM must be an email address').optional(),
+  EMAIL_FROM_NAME: z.string().default('ACME Salary Management'),
 });
 
 function parse<T extends z.ZodType>(schema: T, env: Record<string, string | undefined>) {
@@ -46,6 +55,14 @@ export function loadScriptConfig(env: Record<string, string | undefined>): Scrip
 /** Reads the API settings from environment variables and fails fast when a value is invalid. */
 export function loadConfig(env: Record<string, string | undefined>): Config {
   const data = parse(serverEnvSchema, env);
+  if (data.EMAIL_TRANSPORT === 'console' && data.NODE_ENV === 'production') {
+    throw new Error(
+      'EMAIL_TRANSPORT=console writes reset links to the log; use brevo in production',
+    );
+  }
+  if (data.EMAIL_TRANSPORT === 'brevo' && (!data.BREVO_API_KEY || !data.EMAIL_FROM)) {
+    throw new Error('EMAIL_TRANSPORT=brevo needs BREVO_API_KEY and EMAIL_FROM');
+  }
   return {
     port: data.PORT,
     logLevel: data.LOG_LEVEL,
@@ -53,5 +70,14 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     nodeEnv: data.NODE_ENV,
     jwtSecret: data.JWT_SECRET,
     trustProxy: data.TRUST_PROXY === 'true',
+    appUrl: data.APP_URL,
+    email:
+      data.EMAIL_TRANSPORT === 'brevo'
+        ? {
+            transport: 'brevo',
+            apiKey: data.BREVO_API_KEY ?? '',
+            from: { email: data.EMAIL_FROM ?? '', name: data.EMAIL_FROM_NAME },
+          }
+        : { transport: 'console' },
   };
 }

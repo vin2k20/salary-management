@@ -14,6 +14,8 @@ describe('loadConfig', () => {
       nodeEnv: 'development',
       jwtSecret,
       trustProxy: false,
+      appUrl: 'http://localhost:5173',
+      email: { transport: 'console' },
     });
   });
 
@@ -25,6 +27,9 @@ describe('loadConfig', () => {
         LOG_LEVEL: 'debug',
         NODE_ENV: 'production',
         TRUST_PROXY: 'true',
+        EMAIL_TRANSPORT: 'brevo',
+        BREVO_API_KEY: 'xkeysib-test',
+        EMAIL_FROM: 'sender@example.com',
       }),
     ).toMatchObject({ port: 4000, logLevel: 'debug', nodeEnv: 'production', trustProxy: true });
   });
@@ -51,6 +56,35 @@ describe('loadConfig', () => {
     );
     expect(() => loadConfig({ ...required, JWT_SECRET: 'short-secret' })).not.toThrow(
       /short-secret/,
+    );
+  });
+});
+
+describe('email settings', () => {
+  it('uses Brevo with a key and a verified sender', () => {
+    expect(
+      loadConfig({
+        ...required,
+        EMAIL_TRANSPORT: 'brevo',
+        BREVO_API_KEY: 'xkeysib-test',
+        EMAIL_FROM: 'sender@example.com',
+      }).email,
+    ).toEqual({
+      transport: 'brevo',
+      apiKey: 'xkeysib-test',
+      from: { email: 'sender@example.com', name: 'ACME Salary Management' },
+    });
+  });
+
+  it('needs the key and sender for Brevo', () => {
+    expect(() => loadConfig({ ...required, EMAIL_TRANSPORT: 'brevo' })).toThrow(
+      /needs BREVO_API_KEY and EMAIL_FROM/,
+    );
+  });
+
+  it('refuses the console sender in production, since it logs reset links', () => {
+    expect(() => loadConfig({ ...required, NODE_ENV: 'production' })).toThrow(
+      /use brevo in production/,
     );
   });
 });

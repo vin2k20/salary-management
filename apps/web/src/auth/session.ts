@@ -1,4 +1,10 @@
-import { currentUserResponseSchema, type CurrentUser, type LoginRequest } from '@salary/shared';
+import {
+  currentUserResponseSchema,
+  type CurrentUser,
+  type ForgotPasswordRequest,
+  type LoginRequest,
+  type SetPasswordRequest,
+} from '@salary/shared';
 import { useQuery } from '@tanstack/react-query';
 import { ApiError, apiRequest, apiSend } from '../api/client.ts';
 
@@ -35,4 +41,14 @@ export async function login(request: LoginRequest): Promise<CurrentUser> {
 
 export function logout(): Promise<void> {
   return apiSend('/api/auth/logout', { method: 'POST' });
+}
+
+/** Asks for a reset link. The API answers the same way whether or not the email exists. */
+export function requestPasswordReset(request: ForgotPasswordRequest): Promise<void> {
+  return apiSend('/api/auth/forgot-password', { method: 'POST', body: request });
+}
+
+/** Sets a password with the token from a reset or invite link. */
+export function setPassword(request: SetPasswordRequest): Promise<void> {
+  return apiSend('/api/auth/set-password', { method: 'POST', body: request });
 }

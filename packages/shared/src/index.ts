@@ -38,12 +38,18 @@ export {
 } from './change-log.ts';
 export { countryCodeSchema } from './countries.ts';
 export {
+  MIN_PASSWORD_LENGTH,
   ROLES,
   currentUserResponseSchema,
   currentUserSchema,
+  forgotPasswordRequestSchema,
   loginRequestSchema,
+  newPasswordSchema,
+  setPasswordRequestSchema,
   type CurrentUser,
   type CurrentUserResponse,
+  type ForgotPasswordRequest,
   type LoginRequest,
   type Role,
+  type SetPasswordRequest,
 } from './auth.ts';
