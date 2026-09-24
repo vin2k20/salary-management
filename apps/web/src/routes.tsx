@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router';
 import { RequireAuth } from './auth/RequireAuth.tsx';
 import { RequireRole } from './auth/RequireRole.tsx';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage.tsx';
+import { EmployeePage } from './pages/EmployeePage.tsx';
 import { EmployeesPage } from './pages/EmployeesPage.tsx';
 import { HomePage } from './pages/HomePage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
@@ -18,6 +19,7 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <HomePage /> },
       { path: 'employees', element: <EmployeesPage /> },
+      { path: 'employees/:id', element: <EmployeePage /> },
       {
         path: 'users',
         element: (

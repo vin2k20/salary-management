@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ComponentProps } from 'react';
+import { Link } from 'react-router';
 import { cn } from '../../lib/cn.ts';
 
 const buttonVariants = cva(
@@ -30,4 +31,14 @@ export function Button({
   return (
     <button type={type} className={cn(buttonVariants({ variant, size }), className)} {...props} />
   );
+}
+
+/** A link that looks like a button, for actions that open another page. */
+export function ButtonLink({
+  className,
+  variant,
+  size,
+  ...props
+}: ComponentProps<typeof Link> & VariantProps<typeof buttonVariants>) {
+  return <Link className={cn(buttonVariants({ variant, size }), className)} {...props} />;
 }
