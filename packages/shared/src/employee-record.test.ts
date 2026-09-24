@@ -36,6 +36,7 @@ describe('createEmployeeRequestSchema', () => {
       firstName: 'Aarav',
       email: 'aarav.sharma@acme.example.com',
       jobTitle: 'Senior Software Engineer',
+      startingPay: [],
     });
   });
 

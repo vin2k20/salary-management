@@ -521,7 +521,7 @@ feat(web): add move to another country action for global HR
 **Read first:** HLD 3.3, 4, 5, decision D25.
 
 **Scope:**
-- API: `GET /api/pay-components` (with frequencies), `POST /api/pay-components`, `PATCH /api/pay-components/:id` (rename, deactivate). Global HR for any country or all countries; country HR for their own country. Deactivated components stay on existing pay items but cannot be used for new ones. Changes are written to the change log.
+- API: `GET /api/pay-components` (with frequencies; added read-only in step 13, D52), `POST /api/pay-components`, `PATCH /api/pay-components/:id` (rename, deactivate). Global HR for any country or all countries; country HR for their own country. Deactivated components stay on existing pay items but cannot be used for new ones. Changes are written to the change log.
 - Web: pay components page, add form and deactivate action.
 
 **Tests:** Validation, unique code per country, scope rules for both roles, deactivated components rejected in new pay changes.
@@ -747,7 +747,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 09 | Done | [#11](https://github.com/vin2k20/salary-management/pull/11) | 24 Sep 2026 | User management rules (D48); main branch ruleset (D47) |
 | 10 | Done | [#12](https://github.com/vin2k20/salary-management/pull/12) | 24 Sep 2026 | Exchange rate details (D49); daily workflow run by hand |
 | 11 | Done | [#13](https://github.com/vin2k20/salary-management/pull/13) | 24 Sep 2026 | Directory details (D50); every dropdown uses a styled Radix Select |
-| 12 | Not started | | | |
+| 12 | Done | [#14](https://github.com/vin2k20/salary-management/pull/14) | 24 Sep 2026 | Employee record details (D51); job title suggestions and scoped spelling checks |
 | 13 | Not started | | | |
 | 14 | Not started | | | |
 | 15 | Not started | | | |

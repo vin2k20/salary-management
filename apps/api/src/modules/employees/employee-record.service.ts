@@ -9,19 +9,22 @@ import {
   type CurrentUser,
   type DetailIssue,
   type Employee,
+  type TransferRequest,
   type UpdateEmployeeRequest,
 } from '@salary/shared';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import type { Clock } from '../../clock.ts';
+import { todayOn, type Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { isUniqueViolation } from '../../db/errors.ts';
 import { employees } from '../../db/schema.ts';
 import { HttpError, RequestValidationError } from '../../http/errors.ts';
 import { scopeCondition, type Scope } from '../auth/scope.ts';
 import { diffFields, recordChange } from '../change-log/change-log.ts';
-
-export type EmployeeRecord = typeof employees.$inferSelect;
+import { loadComponents, loadPayState, lockEmployee } from '../compensation/pay.repository.ts';
+import { planPayChange, planTransfer } from '../compensation/pay-rules.ts';
+import { savePayPlan, throwIfInvalid } from '../compensation/pay.service.ts';
+import { findEmployeeOrThrow, type EmployeeRecord } from './employees.repository.ts';
 
 export function toEmployee(row: EmployeeRecord): Employee {
   return {
@@ -57,25 +60,6 @@ export function loggedFields(employee: Employee): Record<string, unknown> {
   return fields;
 }
 
-/** An employee in the caller's scope; records outside it are treated as missing (404). */
-export async function findEmployee(
-  db: Database,
-  scope: Scope,
-  id: string,
-): Promise<EmployeeRecord | undefined> {
-  const [row] = await db
-    .select()
-    .from(employees)
-    .where(and(eq(employees.id, id), scopeCondition(scope, employees.countryCode)));
-  return row;
-}
-
-export async function findEmployeeOrThrow(db: Database, scope: Scope, id: string) {
-  const row = await findEmployee(db, scope, id);
-  if (!row) throw new HttpError(404, 'Employee not found');
-  return row;
-}
-
 /**
  * The spelling already stored in the caller's scope for a job title or department, ignoring
  * case, so "software engineer" joins "Software Engineer" in filters and statistics. New values
@@ -93,7 +77,59 @@ export async function storedSpelling(db: Database, scope: Scope, column: PgColum
   return typeof row?.value === 'string' ? row.value : value;
 }
 
-/** Adds an active employee in the caller's scope, in one transaction with the change log. */
+/**
+ * Starting pay: a pay change with the reason "hire" from the hire date, checked with the same
+ * rules as any other pay change.
+ */
+async function saveStartingPay(
+  tx: Database,
+  scope: Scope,
+  employee: Employee,
+  lines: CreateEmployeeRequest['startingPay'],
+  actor: CurrentUser,
+  clock: Clock,
+) {
+  const state = {
+    countryCode: employee.countryCode,
+    hireDate: employee.hireDate,
+    latestChangeDate: null,
+    openItems: [],
+  };
+  const components = await loadComponents(
+    tx,
+    scope,
+    lines.map((line) => line.componentId),
+  );
+  const result = planPayChange(
+    state,
+    { effectiveFrom: employee.hireDate, set: lines, end: [] },
+    components,
+  );
+  if (!result.ok) {
+    throw new RequestValidationError(
+      result.issues.map((issue) => ({
+        ...issue,
+        field: issue.field.replace(/^set\./, 'startingPay.'),
+      })),
+    );
+  }
+  await savePayPlan(tx, {
+    scope,
+    employee,
+    effectiveFrom: employee.hireDate,
+    reason: 'hire',
+    note: null,
+    plan: result.plan,
+    openItems: [],
+    actor,
+    clock,
+  });
+}
+
+/**
+ * Adds an active employee in the caller's scope, with any starting pay, in one transaction with
+ * the change log.
+ */
 export async function createEmployee(
   db: Database,
   scope: Scope,
@@ -105,11 +141,12 @@ export async function createEmployee(
     throw new HttpError(403, `You can only add employees in ${countryName(scope.countryCode)}`);
   }
   try {
+    const { startingPay, ...details } = input;
     return await db.transaction(async (tx) => {
       const [row] = await tx
         .insert(employees)
         .values({
-          ...input,
+          ...details,
           jobTitle: await storedSpelling(tx, scope, employees.jobTitle, input.jobTitle),
           department: await storedSpelling(tx, scope, employees.department, input.department),
         })
@@ -128,6 +165,9 @@ export async function createEmployee(
         },
         clock,
       );
+      if (startingPay.length > 0) {
+        await saveStartingPay(tx, scope, employee, startingPay, actor, clock);
+      }
       return employee;
     });
   } catch (error) {
@@ -210,5 +250,71 @@ export async function updateEmployee(
       clock,
     );
     return updated;
+  });
+}
+
+/**
+ * Moves an employee to another country (D35, global HR only). In one transaction the country,
+ * region and country fields change, all current pay ends on the effective date and the new pay
+ * starts in the new country's currency with the reason "transfer". Both are logged.
+ */
+export async function transferEmployee(
+  db: Database,
+  scope: Scope,
+  id: string,
+  request: TransferRequest,
+  actor: CurrentUser,
+  clock: Clock,
+): Promise<Employee> {
+  return db.transaction(async (tx) => {
+    const row = await lockEmployee(tx, scope, id);
+    if (!row) throw new HttpError(404, 'Employee not found');
+    if (row.status !== 'active') {
+      throw new HttpError(409, 'Mark the employee active before moving them');
+    }
+    const before = toEmployee(row);
+    const state = await loadPayState(tx, scope, row);
+    const components = await loadComponents(tx, scope, [
+      ...request.items.map((line) => line.componentId),
+      ...state.openItems.map((item) => item.componentId),
+    ]);
+    const plan = throwIfInvalid(planTransfer(state, request, components, todayOn(clock)));
+
+    const [updated] = await tx
+      .update(employees)
+      .set({
+        countryCode: request.countryCode,
+        region: request.region,
+        countryFields: request.countryFields,
+        updatedAt: clock.now(),
+      })
+      .where(eq(employees.id, id))
+      .returning();
+    if (!updated) throw new HttpError(404, 'Employee not found');
+    const after = toEmployee(updated);
+    await recordChange(
+      tx,
+      {
+        entityType: 'employee',
+        entityId: id,
+        action: 'transferred',
+        changes: diffFields(loggedFields(before), loggedFields(after)),
+        countryCode: after.countryCode,
+        changedBy: actor.id,
+      },
+      clock,
+    );
+    await savePayPlan(tx, {
+      scope,
+      employee: after,
+      effectiveFrom: request.effectiveFrom,
+      reason: 'transfer',
+      note: null,
+      plan,
+      openItems: state.openItems,
+      actor,
+      clock,
+    });
+    return after;
   });
 }

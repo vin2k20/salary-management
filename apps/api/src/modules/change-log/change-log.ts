@@ -5,10 +5,10 @@ import type {
   ChangeLogEntry as ChangeLogItem,
   FieldChanges,
 } from '@salary/shared';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray, or } from 'drizzle-orm';
 import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
-import { changeLog, users } from '../../db/schema.ts';
+import { changeLog, payChanges, users } from '../../db/schema.ts';
 import { scopeCondition, type Scope } from '../auth/scope.ts';
 
 export interface ChangeLogEntry {
@@ -51,8 +51,9 @@ export async function recordChange(db: Database, entry: ChangeLogEntry, clock: C
 }
 
 /**
- * Change log of one record, newest first, with who made each change. Only entries for countries
- * in the caller's scope are read; callers also check that the record itself is in scope.
+ * Change log of one record, newest first, with who made each change. For an employee it also
+ * holds their pay changes. Only entries for countries in the caller's scope are read; callers
+ * also check that the record itself is in scope.
  */
 export async function changeLogFor(
   db: Database,
@@ -60,9 +61,18 @@ export async function changeLogFor(
   entityType: ChangeLogEntityType,
   entityId: string,
 ): Promise<ChangeLogItem[]> {
+  const record = and(eq(changeLog.entityType, entityType), eq(changeLog.entityId, entityId));
+  const employeePay = and(
+    eq(changeLog.entityType, 'pay_change'),
+    inArray(
+      changeLog.entityId,
+      db.select({ id: payChanges.id }).from(payChanges).where(eq(payChanges.employeeId, entityId)),
+    ),
+  );
   const rows = await db
     .select({
       id: changeLog.id,
+      entityType: changeLog.entityType,
       action: changeLog.action,
       changes: changeLog.changes,
       changedAt: changeLog.changedAt,
@@ -73,14 +83,14 @@ export async function changeLogFor(
     .leftJoin(users, eq(users.id, changeLog.changedBy))
     .where(
       and(
-        eq(changeLog.entityType, entityType),
-        eq(changeLog.entityId, entityId),
+        entityType === 'employee' ? or(record, employeePay) : record,
         scopeCondition(scope, changeLog.countryCode),
       ),
     )
     .orderBy(desc(changeLog.changedAt));
   return rows.map((row) => ({
     id: row.id,
+    entityType: row.entityType,
     action: row.action,
     changes: row.changes,
     changedAt: row.changedAt.toISOString(),

@@ -1,22 +1,32 @@
-import type { UpdateEmployeeRequest } from '@salary/shared';
+import { COUNTRIES, type UpdateEmployeeRequest } from '@salary/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { errorMessage } from '../api/errors.ts';
+import { useCurrentUser } from '../auth/session.ts';
 import { Alert } from '../components/ui/alert.tsx';
 import { Button, ButtonLink } from '../components/ui/button.tsx';
 import { Card, CardContent } from '../components/ui/card.tsx';
+import { CurrentPay } from '../employees/CurrentPay.tsx';
 import { EmployeeChangeLog } from '../employees/EmployeeChangeLog.tsx';
 import { EmployeeDetails } from '../employees/EmployeeDetails.tsx';
 import { MarkInactivePanel } from '../employees/MarkInactivePanel.tsx';
-import { employeeSaved, updateEmployee, useEmployee } from '../employees/api.ts';
+import { PayChangeDialog } from '../employees/PayChangeDialog.tsx';
+import { PayHistory } from '../employees/PayHistory.tsx';
+import { PaySummary } from '../employees/PaySummary.tsx';
+import { TransferDialog } from '../employees/TransferDialog.tsx';
+import { employeeSaved, payChanged, updateEmployee, useEmployee } from '../employees/api.ts';
 
-/** One employee's record: details, actions and history (HLD 3.1). */
+type OpenDialog = 'none' | 'pay-change' | 'move';
+
+/** One employee's record: details, pay, actions and history (HLD 3.1). */
 export function EmployeePage() {
   const { id = '' } = useParams();
   const employee = useEmployee(id);
-  const data = employee.data;
+  const data = employee.data?.employee;
+  const { data: user } = useCurrentUser();
   const queryClient = useQueryClient();
+  const [dialog, setDialog] = useState<OpenDialog>('none');
   const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const setStatus = useMutation({
@@ -57,12 +67,28 @@ export function EmployeePage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {data.jobTitle}, {data.department}
               </p>
+              {employee.data && (
+                <div className="mt-4">
+                  <PaySummary totals={employee.data.payTotals} />
+                </div>
+              )}
             </div>
             {!confirming && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <ButtonLink to={`/employees/${data.id}/edit`} variant="secondary">
                   Edit
                 </ButtonLink>
+                {user?.role === 'global_hr' && data.status === 'active' && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setNotice(null);
+                      setDialog('move');
+                    }}
+                  >
+                    Move to another country
+                  </Button>
+                )}
                 {data.status === 'active' ? (
                   <Button
                     variant="secondary"
@@ -114,6 +140,33 @@ export function EmployeePage() {
 
           <Card className="mt-6">
             <CardContent className="pt-6">
+              <CurrentPay
+                employeeId={data.id}
+                action={
+                  data.status === 'active' && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setNotice(null);
+                        setDialog('pay-change');
+                      }}
+                    >
+                      Record pay change
+                    </Button>
+                  )
+                }
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardContent className="pt-6">
+              <PayHistory employeeId={data.id} />
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardContent className="pt-6">
               <section aria-labelledby="details-heading">
                 <h2 id="details-heading" className="mb-4 text-lg font-medium">
                   Details
@@ -133,6 +186,40 @@ export function EmployeePage() {
               </section>
             </CardContent>
           </Card>
+
+          {dialog === 'pay-change' && (
+            <PayChangeDialog
+              open
+              onOpenChange={(open) => {
+                if (!open) setDialog('none');
+              }}
+              employeeId={data.id}
+              countryCode={data.countryCode}
+              currency={COUNTRIES[data.countryCode].currencyCode}
+              onSaved={() => {
+                setDialog('none');
+                setNotice('Pay change saved.');
+                void payChanged(queryClient, data.id);
+              }}
+            />
+          )}
+          {dialog === 'move' && (
+            <TransferDialog
+              open
+              onOpenChange={(open) => {
+                if (!open) setDialog('none');
+              }}
+              employeeId={data.id}
+              currentCountry={data.countryCode}
+              onMoved={(countryCode) => {
+                setDialog('none');
+                setNotice(
+                  `${data.firstName} ${data.lastName} was moved to ${COUNTRIES[countryCode].name}.`,
+                );
+                void payChanged(queryClient, data.id);
+              }}
+            />
+          )}
         </>
       )}
     </>

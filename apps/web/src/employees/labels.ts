@@ -1,4 +1,11 @@
-import type { EmployeeStatus, EmploymentType, FlsaStatus } from '@salary/shared';
+import {
+  PAY_FREQUENCIES,
+  type EmployeeStatus,
+  type EmploymentType,
+  type FlsaStatus,
+  type PayChangeReason,
+  type PayFrequencyCode,
+} from '@salary/shared';
 
 export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
   full_time: 'Full-time',
@@ -17,7 +24,22 @@ export const FLSA_STATUS_LABELS: Record<FlsaStatus, string> = {
   non_exempt: 'Non-exempt',
 };
 
-/** Names of the employee fields, as shown in the change log. */
+export const PAY_CHANGE_REASON_LABELS: Record<PayChangeReason, string> = {
+  hire: 'Hire',
+  promotion: 'Promotion',
+  revision: 'Revision',
+  correction: 'Correction',
+  import: 'Import',
+  transfer: 'Move to another country',
+};
+
+/** "Monthly", "Every two weeks"; in lower case inside a sentence. */
+export function frequencyLabel(frequency: PayFrequencyCode, inSentence = false): string {
+  const { name } = PAY_FREQUENCIES[frequency];
+  return inSentence ? name.toLowerCase() : name;
+}
+
+/** Names of the employee and pay change fields, as shown in the change log. */
 export const FIELD_LABELS: Record<string, string> = {
   employeeCode: 'Employee code',
   firstName: 'First name',
@@ -37,4 +59,7 @@ export const FIELD_LABELS: Record<string, string> = {
   award: 'Award or agreement',
   pfApplicable: 'PF applies',
   esiApplicable: 'ESI applies',
+  effectiveFrom: 'Effective from',
+  reason: 'Reason',
+  note: 'Note',
 };

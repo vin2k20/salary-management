@@ -25,7 +25,8 @@ import { SuggestField } from '../components/suggest-field.tsx';
 import { TextField } from '../components/text-field.tsx';
 import { Alert } from '../components/ui/alert.tsx';
 import { Button, ButtonLink } from '../components/ui/button.tsx';
-import { useReferenceData } from './api.ts';
+import { PayLinesEditor } from './PayLinesEditor.tsx';
+import { usePayComponents, useReferenceData } from './api.ts';
 import { EMPLOYMENT_TYPE_LABELS, FLSA_STATUS_LABELS } from './labels.ts';
 
 /** The form's values: the country and employment type start unchosen. */
@@ -154,6 +155,8 @@ export function EmployeeForm({
   const countryCode = useWatch({ control: form.control, name: 'countryCode' });
   // Job titles and departments already in use in the user's scope, offered as suggestions.
   const reference = useReferenceData();
+  // Components for starting pay, once the country is known.
+  const catalogue = usePayComponents(editing ? undefined : countryCode);
   const { errors } = form.formState;
 
   return (
@@ -186,6 +189,7 @@ export function EmployeeForm({
               // Regions and country fields belong to one country, so a new country clears them.
               form.setValue('region', '');
               form.setValue('countryFields', {});
+              form.setValue('startingPay', []);
             }}
             disabled={editing || Boolean(fixedCountry)}
             error={errors.countryCode}
@@ -311,6 +315,30 @@ export function EmployeeForm({
         {...form.register('hireDate')}
       />
       {countryCode && <CountryFields form={form} countryCode={countryCode} />}
+      {!editing && (
+        <fieldset className="sm:col-span-2">
+          <legend className="mb-1 text-sm font-medium">Starting pay (optional)</legend>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Starts on the hire date. Pay can also be recorded later from the employee page.
+          </p>
+          <Controller
+            control={form.control}
+            name="startingPay"
+            render={({ field }) => (
+              <PayLinesEditor
+                idPrefix="starting-pay"
+                legend={(position) => `Pay component ${String(position)}`}
+                lines={field.value ?? []}
+                onChange={field.onChange}
+                components={(catalogue.data?.items ?? []).filter((item) => item.isActive)}
+                frequencies={catalogue.data?.frequencies ?? []}
+                currency={countryCode ? COUNTRIES[countryCode].currencyCode : undefined}
+                errorFor={(index, name) => errors.startingPay?.[index]?.[name]?.message}
+              />
+            )}
+          />
+        </fieldset>
+      )}
       <div className="flex gap-2 sm:col-span-2">
         <Button type="submit" disabled={pending}>
           {pending ? 'Saving...' : submitLabel}

@@ -9,10 +9,12 @@ import { errorHandler, notFoundHandler } from './http/problem-details.ts';
 import { requestLogger } from './http/request-logger.ts';
 import { authRouter, type AuthSettings } from './modules/auth/auth.routes.ts';
 import { requireAuth } from './modules/auth/require-auth.ts';
+import { compensationRouter } from './modules/compensation/compensation.routes.ts';
 import { employeesRouter, referenceRouter } from './modules/employees/employees.routes.ts';
 import type { RateProvider } from './modules/fx-rates/frankfurter-client.ts';
 import { fxRatesRouter, internalFxRatesRouter } from './modules/fx-rates/fx-rates.routes.ts';
 import { healthRouter } from './modules/health/health.routes.ts';
+import { payComponentsRouter } from './modules/pay-components/pay-components.routes.ts';
 import { usersRouter } from './modules/users/users.routes.ts';
 
 export interface AppDependencies {
@@ -63,7 +65,9 @@ export function createApp({
   app.use('/api/users', usersRouter({ db, clock, emailSender, appUrl }));
   app.use('/api/fx-rates', fxRatesRouter({ db, clock, rateProvider }));
   app.use('/api/employees', employeesRouter({ db, clock }));
+  app.use('/api/employees', compensationRouter({ db, clock }));
   app.use('/api/reference', referenceRouter({ db }));
+  app.use('/api/pay-components', payComponentsRouter({ db }));
 
   app.use(notFoundHandler());
   app.use(errorHandler());

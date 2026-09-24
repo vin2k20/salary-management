@@ -27,6 +27,7 @@ const changeLog = {
   items: [
     {
       id: '33333333-3333-4333-8333-333333333333',
+      entityType: 'employee',
       action: 'updated',
       changes: {
         jobTitle: { old: 'Software Engineer', new: 'Senior Software Engineer' },
@@ -38,6 +39,7 @@ const changeLog = {
     },
     {
       id: '44444444-4444-4444-8444-444444444444',
+      entityType: 'employee',
       action: 'created',
       changes: { firstName: { old: null, new: 'Maria' } },
       changedAt: '2024-04-01T08:00:00.000Z',
@@ -46,10 +48,22 @@ const changeLog = {
   ],
 };
 
+const usd = (amountMinor: number) => ({ amountMinor, currency: 'USD' });
+
+const payTotals = {
+  annualTotal: usd(0),
+  monthlyTotal: usd(0),
+  annualGross: usd(0),
+  monthlyGross: usd(0),
+};
+
 function employeeApi(overrides: Parameters<typeof mockApi>[0] = {}) {
   return mockApi({
     'GET /api/auth/me': () => Response.json({ user: globalHrUser }),
-    [`GET /api/employees/${maria.id}`]: () => Response.json({ employee: maria }),
+    [`GET /api/employees/${maria.id}`]: () => Response.json({ employee: maria, payTotals }),
+    [`GET /api/employees/${maria.id}/pay`]: () =>
+      Response.json({ asOf: '2026-09-24', items: [], totals: payTotals }),
+    [`GET /api/employees/${maria.id}/pay-changes`]: () => Response.json({ items: [] }),
     [`GET /api/employees/${maria.id}/change-log`]: () => Response.json(changeLog),
     ...overrides,
   });
@@ -107,6 +121,47 @@ describe('EmployeePage', () => {
     expect(within(first).getByText('Job level:').parentElement).toHaveTextContent(
       'Job level: Not set to L4',
     );
+  });
+
+  it('lists pay changes in the change log with amounts in words', async () => {
+    employeeApi({
+      [`GET /api/employees/${maria.id}/change-log`]: () =>
+        Response.json({
+          items: [
+            {
+              id: '55555555-5555-4555-8555-555555555555',
+              entityType: 'pay_change',
+              action: 'created',
+              changes: {
+                effectiveFrom: { old: null, new: '2026-10-01' },
+                reason: { old: null, new: 'promotion' },
+                'Base salary or wages': {
+                  old: { amountMinor: 400_000, currency: 'USD', frequency: 'bi_weekly' },
+                  new: { amountMinor: 450_000, currency: 'USD', frequency: 'bi_weekly' },
+                },
+                Bonus: {
+                  old: null,
+                  new: { amountMinor: 500_000, currency: 'USD', frequency: 'yearly' },
+                },
+              },
+              changedAt: '2026-09-22T09:30:00.000Z',
+              changedBy: { id: globalHrUser.id, name: 'Global HR' },
+            },
+          ],
+        }),
+    });
+    renderApp(`/employees/${maria.id}`);
+
+    const log = await screen.findByRole('region', { name: 'Change log' });
+    const entry = await within(log).findByRole('listitem', {
+      name: 'Pay change recorded by Global HR on 22 Sep 2026',
+    });
+    expect(entry).toHaveTextContent('Effective from: Not set to 1 Oct 2026');
+    expect(entry).toHaveTextContent('Reason: Not set to Promotion');
+    expect(entry).toHaveTextContent(
+      'Base salary or wages: $4,000.00 every two weeks to $4,500.00 every two weeks',
+    );
+    expect(entry).toHaveTextContent('Bonus: Not set to $5,000.00 yearly');
   });
 
   it('marks the employee inactive only after confirming the date', async () => {

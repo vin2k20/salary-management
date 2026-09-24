@@ -1,7 +1,8 @@
 import type { EmployeeListQuery, EmployeeSortField } from '@salary/shared';
-import { sql, type SQL } from 'drizzle-orm';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
 import type { Database } from '../../db/client.ts';
 import { employees, fxRates } from '../../db/schema.ts';
+import { HttpError } from '../../http/errors.ts';
 import { scopeCondition, type Scope } from '../auth/scope.ts';
 
 export interface EmployeeListRow {
@@ -124,4 +125,25 @@ export async function listEmployees(
   const { rows } = page as { rows: EmployeeListRow[] };
   const [counted] = (count as { rows: { total: number }[] }).rows;
   return { rows, total: counted?.total ?? 0 };
+}
+
+export type EmployeeRecord = typeof employees.$inferSelect;
+
+/** An employee in the caller's scope; records outside it are treated as missing (404). */
+export async function findEmployee(
+  db: Database,
+  scope: Scope,
+  id: string,
+): Promise<EmployeeRecord | undefined> {
+  const [row] = await db
+    .select()
+    .from(employees)
+    .where(and(eq(employees.id, id), scopeCondition(scope, employees.countryCode)));
+  return row;
+}
+
+export async function findEmployeeOrThrow(db: Database, scope: Scope, id: string) {
+  const row = await findEmployee(db, scope, id);
+  if (!row) throw new HttpError(404, 'Employee not found');
+  return row;
 }

@@ -17,6 +17,7 @@ export function EditEmployeePage() {
     mutationFn: ({
       employeeCode: _code,
       countryCode: _country,
+      startingPay: _startingPay,
       ...details
     }: CreateEmployeeRequest) => updateEmployee(id, details),
     onSuccess: async (updated) => {
@@ -24,7 +25,7 @@ export function EditEmployeePage() {
       await navigate(`/employees/${id}`);
     },
   });
-  const data = employee.data;
+  const data = employee.data?.employee;
 
   return (
     <>

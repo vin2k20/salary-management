@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-type Handler = (request: { body: unknown }) => Response | Promise<Response>;
+type Handler = (request: { body: unknown; query: URLSearchParams }) => Response | Promise<Response>;
 
 /**
  * Replaces fetch with handlers keyed by "METHOD /path", matched without the query string. Unknown
@@ -17,15 +17,22 @@ export function mockApi(handlers: Record<string, Handler>) {
     const body: unknown = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
     calls.push({ method, path: url.pathname, query: url.search, body });
     const handler = handlers[`${method} ${url.pathname}`];
-    return handler ? handler({ body }) : Response.json({ status: 404 }, { status: 404 });
+    return handler
+      ? handler({ body, query: url.searchParams })
+      : Response.json({ status: 404 }, { status: 404 });
   });
   vi.stubGlobal('fetch', fetchMock);
   return { calls };
 }
 
-export function problem(status: number, detail: string) {
+/** A problem details answer, with the per-field errors the API sends for invalid requests. */
+export function problem(
+  status: number,
+  detail: string,
+  errors?: { field: string; message: string }[],
+) {
   return Response.json(
-    { type: 'about:blank', title: 'Error', status, detail },
+    { type: 'about:blank', title: 'Error', status, detail, ...(errors ? { errors } : {}) },
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
