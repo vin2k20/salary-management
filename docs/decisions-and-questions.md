@@ -31,6 +31,7 @@ This document records the decisions for the application, with reasons and altern
 | D21 | Export and file format | An Excel file has two sheets, Employees and Pay components. A CSV file holds one of the two. Export uses the same columns as import and follows the current filters and the user's country scope. | A file exported from the application can be edited and imported back. | One wide sheet with a column per component (breaks when components differ by country) |
 | D22 | No server-side cache | Caching only in the browser (TanStack Query), on the CDN and with HTTP headers for reference data. | Data fits in PostgreSQL memory, and a server cache risks showing old pay figures after an edit. | Redis; materialized views as the first step if measurements show a need |
 | D37 | Step 00 branch | Step 00 was committed directly on `main`. Every later step uses a `step/NN-short-name` branch from `main`, merged through a pull request. | `main` did not exist yet, so there was no branch to start from or merge into. | An empty first commit on `main`, then a step 00 branch and pull request |
+| D38 | TypeScript version | TypeScript 6.0 (`~6.0.3`), with all tooling installed once at the repository root and each workspace checked with its own `tsconfig.json` that extends a strict base. | typescript-eslint, which provides type-aware lint rules, supports TypeScript below 6.1 only; TypeScript 7.0 would break linting. Move to TypeScript 7 once typescript-eslint supports it. | TypeScript 7.0 without type-aware lint rules |
 
 ## 2. Decisions from the answered questions
 

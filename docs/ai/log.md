@@ -17,3 +17,4 @@ A short record of the work on this project, from start to end. The work is done 
 | 24 Sep 2026 | Updated the requirements, decisions, design, diagrams and implementation plan to match the answers. |
 | 24 Sep 2026 | Confirmed the remaining design details: a change log, moving employees between countries, monthly cost from current pay, and the dashboard currency toggle. |
 | 24 Sep 2026 | Step 00: started the Git repository with the base configuration files, a README outline, the project rules and all design documents, and pushed it to GitHub. |
+| 24 Sep 2026 | Step 01: set up npm workspaces for the API, web app and shared package, with strict TypeScript, ESLint, Prettier, Vitest and root scripts to lint, type check, test and build. |
