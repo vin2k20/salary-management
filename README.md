@@ -167,6 +167,18 @@ Each employee has a page with their details, the fields that apply in their coun
 
 The API endpoints are `GET` and `PATCH /api/employees/:id`, `POST /api/employees` and `GET /api/employees/:id/change-log`. Records outside a country HR user's scope answer 404.
 
+## Pay
+
+Each employee's pay is a set of components (such as Basic, HRA or Base salary), each with an amount per period, a currency and a frequency. The employee page shows:
+
+- **Current pay:** today's components with their monthly equivalent and annual amount, the total and the gross pay (earnings, allowances and bonuses). Amounts follow the currency toggle.
+- **Pay history:** every pay change, newest first, with what it changed, added or ended. Changes dated after today are marked as scheduled and do not count in current pay until their date.
+- **Record pay change:** from an effective date, change or end current components and add new ones, with a reason (promotion, revision or correction). A change must be dated after the last one, and amounts are in the employee's currency.
+- **Starting pay:** can be set when adding an employee; it starts on the hire date.
+- **Move to another country** (global HR only): current pay ends on the effective date and new pay starts in the new country's currency. The old country's HR user can no longer see the employee.
+
+Every pay change and move is written to the employee's change log. The API endpoints are `GET /api/employees/:id/pay`, `GET` and `POST /api/employees/:id/pay-changes`, `POST /api/employees/:id/transfer` and `GET /api/pay-components`.
+
 ## Exchange rates and currency
 
 - **Rates:** US dollar reference rates for CAD, AUD and INR come from the [Frankfurter API](https://frankfurter.dev) (central bank rates, no key). One row per currency and date is kept, so history is never overwritten; repeated refreshes for a date change nothing.
