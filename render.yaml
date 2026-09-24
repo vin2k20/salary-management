@@ -6,7 +6,9 @@ services:
     plan: free
     region: ohio
     branch: main
-    buildCommand: npm ci --omit=dev
+    # Migrations run in the build, before the new version starts (Render's free plan has no
+    # pre-deploy step). A failed migration fails the deploy and the running version stays up.
+    buildCommand: npm ci --omit=dev && npm run db:migrate -w @salary/api
     # Node.js 24 runs the TypeScript source directly (decision D39).
     startCommand: node apps/api/src/server.ts
     healthCheckPath: /api/health
@@ -25,3 +27,6 @@ services:
         value: production
       - key: LOG_LEVEL
         value: info
+      # Pooled connection string of the Neon production branch, set in the Render dashboard.
+      - key: DATABASE_URL
+        sync: false
