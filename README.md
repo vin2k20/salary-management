@@ -6,7 +6,7 @@ A web application where global and country HR managers maintain pay data for 10,
 
 Status: walking skeleton deployed, features not started.
 
-Live app: https://acme-salary-management.vercel.app (the first request after a quiet period can take about a minute while the free API service wakes up). This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
+Live app: https://acme-salary-management-vineet.vercel.app (the first request after a quiet period can take about a minute while the free API service wakes up). This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
 
 ## Overview
 
@@ -92,7 +92,7 @@ Every service runs on its free plan.
 
 | Part | Service | Address | Configuration |
 |---|---|---|---|
-| Web app | Vercel (Hobby) | https://acme-salary-management.vercel.app | `vercel.json` |
+| Web app | Vercel (Hobby) | https://acme-salary-management-vineet.vercel.app | `vercel.json` |
 | API | Render free web service, Ohio | https://acme-salary-api-oxu3.onrender.com | `render.yaml` |
 | Database (from step 05) | Neon free plan, AWS us-east-2 (Ohio) | Connection string in Render settings only | |
 

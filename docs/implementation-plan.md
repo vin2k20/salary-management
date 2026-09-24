@@ -739,7 +739,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 01 | Done | [#1](https://github.com/vin2k20/salary-management/pull/1) | 24 Sep 2026 | TypeScript 6.0 until typescript-eslint supports 7 (D38) |
 | 02 | Done | [#2](https://github.com/vin2k20/salary-management/pull/2) | 24 Sep 2026 | Workflow runs on every push and on pull requests to main |
 | 03 | Done | [#3](https://github.com/vin2k20/salary-management/pull/3) | 24 Sep 2026 | Node.js runs the TypeScript source directly (D39) |
-| 04 | Not started | | | |
+| 04 | Done | [#4](https://github.com/vin2k20/salary-management/pull/4), [#5](https://github.com/vin2k20/salary-management/pull/5), [#6](https://github.com/vin2k20/salary-management/pull/6) | 24 Sep 2026 | API and database in Ohio (D40); web app at acme-salary-management-vineet.vercel.app |
 | 05 | Not started | | | |
 | 06 | Not started | | | |
 | 07 | Not started | | | |
