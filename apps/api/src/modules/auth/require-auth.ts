@@ -3,11 +3,14 @@ import type { RequestHandler } from 'express';
 import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
+import { scopeFor, type Scope } from './scope.ts';
 import { SESSION_COOKIE, readSessionToken } from './session.ts';
 import { findUserById, toCurrentUser } from './users.repository.ts';
 
 export interface AuthContext {
   user: CurrentUser;
+  /** Pass this to every repository function. */
+  scope: Scope;
 }
 
 declare module 'express-serve-static-core' {
@@ -39,7 +42,8 @@ export function requireAuth({ db, clock, jwtSecret }: RequireAuthOptions): Reque
     if (!user?.isActive || user.tokenVersion !== claims?.tokenVersion) {
       throw new HttpError(401, 'Sign in to continue');
     }
-    req.auth = { user: toCurrentUser(user) };
+    const currentUser = toCurrentUser(user);
+    req.auth = { user: currentUser, scope: scopeFor(currentUser) };
     next();
   };
 }
