@@ -28,3 +28,4 @@ export {
   type EmployeeStatus,
   type EmploymentType,
 } from './employees.ts';
+export { PAY_CHANGE_REASONS, type PayChangeReason } from './pay-changes.ts';

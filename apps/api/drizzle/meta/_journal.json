@@ -43,6 +43,13 @@
       "when": 1790247385149,
       "tag": "0005_employees",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790247440012,
+      "tag": "0006_pay-changes-and-items",
+      "breakpoints": true
     }
   ]
 }

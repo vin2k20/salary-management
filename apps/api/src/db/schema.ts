@@ -1,6 +1,12 @@
-import { EMPLOYEE_STATUSES, EMPLOYMENT_TYPES, PAY_COMPONENT_CATEGORIES } from '@salary/shared';
+import {
+  EMPLOYEE_STATUSES,
+  EMPLOYMENT_TYPES,
+  PAY_CHANGE_REASONS,
+  PAY_COMPONENT_CATEGORIES,
+} from '@salary/shared';
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   char,
   check,
@@ -12,6 +18,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -120,5 +127,65 @@ export const employees = pgTable(
       sql`(${table.status} = 'inactive') = (${table.inactiveOn} is not null)`,
     ),
     check('employees_fte_check', sql`${table.fte} > 0 and ${table.fte} <= 1`),
+  ],
+);
+
+/** A dated change to one employee's pay, grouping the pay items it ends and starts. */
+export const payChanges = pgTable(
+  'pay_changes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    effectiveFrom: date('effective_from', { mode: 'string' }).notNull(),
+    reason: text('reason', { enum: PAY_CHANGE_REASONS }).notNull(),
+    note: text('note'),
+    // References users from step 07.
+    createdBy: uuid('created_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check('pay_changes_reason_check', sql`${table.reason} in ${allowedValues(PAY_CHANGE_REASONS)}`),
+  ],
+);
+
+/**
+ * One pay component for one employee: an amount per period in the employee's local currency.
+ * It applies from effective_from up to, but not including, effective_to; an open item has no
+ * effective_to. Each employee has at most one open item per component.
+ */
+export const payItems = pgTable(
+  'pay_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    payChangeId: uuid('pay_change_id')
+      .notNull()
+      .references(() => payChanges.id),
+    componentId: uuid('component_id')
+      .notNull()
+      .references(() => payComponents.id),
+    amountMinor: bigint('amount_minor', { mode: 'number' }).notNull(),
+    currencyCode: char('currency_code', { length: 3 })
+      .notNull()
+      .references(() => currencies.code),
+    frequencyCode: text('frequency_code')
+      .notNull()
+      .references(() => payFrequencies.code),
+    effectiveFrom: date('effective_from', { mode: 'string' }).notNull(),
+    effectiveTo: date('effective_to', { mode: 'string' }),
+  },
+  (table) => [
+    check('pay_items_amount_minor_check', sql`${table.amountMinor} >= 0`),
+    check(
+      'pay_items_effective_dates_check',
+      sql`${table.effectiveTo} is null or ${table.effectiveTo} > ${table.effectiveFrom}`,
+    ),
+    uniqueIndex('pay_items_one_open_item_idx')
+      .on(table.employeeId, table.componentId)
+      .where(sql`${table.effectiveTo} is null`),
   ],
 );
