@@ -63,3 +63,8 @@ export function forgotPasswordRateLimits(): RequestHandler[] {
     }),
   ];
 }
+
+/** 20 attempts per IP address in 15 minutes to set a password from a link. */
+export function setPasswordRateLimits(): RequestHandler[] {
+  return [limiter({ limit: 20, message: 'Too many requests. Try again in 15 minutes.' })];
+}

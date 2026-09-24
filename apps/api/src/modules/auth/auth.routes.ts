@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   forgotPasswordRequestSchema,
   loginRequestSchema,
+  setPasswordRequestSchema,
   type CurrentUserResponse,
 } from '@salary/shared';
 import { Router, type CookieOptions } from 'express';
@@ -13,9 +14,10 @@ import { HttpError } from '../../http/errors.ts';
 import { parseBody } from '../../http/validation.ts';
 import { issueAuthToken } from './auth-tokens.ts';
 import { hashPassword, verifyPassword } from './passwords.ts';
-import { forgotPasswordRateLimits, loginRateLimits } from './rate-limits.ts';
+import { forgotPasswordRateLimits, loginRateLimits, setPasswordRateLimits } from './rate-limits.ts';
 import { requireAuth } from './require-auth.ts';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, createSessionToken } from './session.ts';
+import { setPasswordWithToken } from './set-password.ts';
 import { findUserByEmail, recordLogin, toCurrentUser } from './users.repository.ts';
 
 export interface AuthSettings {
@@ -80,6 +82,14 @@ export function authRouter({ db, clock, auth, emailSender, appUrl }: AuthRouterO
     } catch (error) {
       req.log.error({ err: error }, 'Password reset email failed');
     }
+  });
+
+  router.post('/set-password', ...setPasswordRateLimits(), async (req, res) => {
+    const request = parseBody(setPasswordRequestSchema, req.body);
+    if (!(await setPasswordWithToken(db, request, clock))) {
+      throw new HttpError(400, 'This link is invalid or has expired. Ask for a new one.');
+    }
+    res.status(204).end();
   });
 
   router.post('/logout', (_req, res) => {
