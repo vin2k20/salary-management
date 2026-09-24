@@ -265,6 +265,8 @@ Tests are written before the code where practical, use fixed test data, and do n
 | CI | Build only | Tests with PGlite | PGlite in memory | Fake sender | Fake client |
 | Production | Vercel | Render | Neon | Brevo | Daily GitHub Actions job and Frankfurter |
 
+The API and the database run in the same region: Render in Ohio and Neon in AWS us-east-2 (D40).
+
 Release steps: every push runs lint, type check, tests and build in GitHub Actions. A merge to main deploys the UI to Vercel and the API to Render. Database migrations run before the new API version starts. The seed script is run manually against a new database. All services run on free plans.
 
 ## 11. Operations
