@@ -1,9 +1,12 @@
-import { PAY_COMPONENT_CATEGORIES } from '@salary/shared';
+import { EMPLOYEE_STATUSES, EMPLOYMENT_TYPES, PAY_COMPONENT_CATEGORIES } from '@salary/shared';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
   char,
   check,
+  date,
+  jsonb,
+  numeric,
   pgTable,
   smallint,
   text,
@@ -75,5 +78,47 @@ export const payComponents = pgTable(
       'pay_components_category_check',
       sql`${table.category} in ${allowedValues(PAY_COMPONENT_CATEGORIES)}`,
     ),
+  ],
+);
+
+/**
+ * Employees. Country-specific fields live in country_fields and are validated by a Zod schema per
+ * country. No government IDs, bank details, date of birth or gender are stored.
+ */
+export const employees = pgTable(
+  'employees',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    employeeCode: text('employee_code').notNull(),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name').notNull(),
+    email: text('email').notNull(),
+    jobTitle: text('job_title').notNull(),
+    jobLevel: text('job_level'),
+    department: text('department').notNull(),
+    countryCode: char('country_code', { length: 2 })
+      .notNull()
+      .references(() => countries.code),
+    region: text('region').notNull(),
+    employmentType: text('employment_type', { enum: EMPLOYMENT_TYPES }).notNull(),
+    fte: numeric('fte', { precision: 4, scale: 3, mode: 'number' }).notNull().default(1),
+    hireDate: date('hire_date', { mode: 'string' }).notNull(),
+    status: text('status', { enum: EMPLOYEE_STATUSES }).notNull().default('active'),
+    inactiveOn: date('inactive_on', { mode: 'string' }),
+    countryFields: jsonb('country_fields').$type<Record<string, unknown>>().notNull().default({}),
+    ...timestamps,
+  },
+  (table) => [
+    unique('employees_employee_code_unique').on(table.employeeCode),
+    check(
+      'employees_employment_type_check',
+      sql`${table.employmentType} in ${allowedValues(EMPLOYMENT_TYPES)}`,
+    ),
+    check('employees_status_check', sql`${table.status} in ${allowedValues(EMPLOYEE_STATUSES)}`),
+    check(
+      'employees_inactive_on_check',
+      sql`(${table.status} = 'inactive') = (${table.inactiveOn} is not null)`,
+    ),
+    check('employees_fte_check', sql`${table.fte} > 0 and ${table.fte} <= 1`),
   ],
 );

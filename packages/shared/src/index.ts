@@ -22,3 +22,9 @@ export {
   PAY_COMPONENT_CATEGORIES,
   type PayComponentCategory,
 } from './pay-components.ts';
+export {
+  EMPLOYEE_STATUSES,
+  EMPLOYMENT_TYPES,
+  type EmployeeStatus,
+  type EmploymentType,
+} from './employees.ts';
