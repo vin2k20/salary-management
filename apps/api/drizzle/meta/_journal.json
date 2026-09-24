@@ -64,6 +64,20 @@
       "when": 1790247528828,
       "tag": "0008_change-log",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790247705352,
+      "tag": "0009_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790247705911,
+      "tag": "0010_pay-totals",
+      "breakpoints": true
     }
   ]
 }

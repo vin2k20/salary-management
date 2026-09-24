@@ -18,4 +18,22 @@ describe('database migrations', () => {
     );
     expect(rows).toEqual([{ extname: 'pg_trgm' }]);
   });
+
+  it('create the indexes for filters, name search and pay history', async () => {
+    const { rows } = await database.client.query<{ indexname: string }>(
+      "select indexname from pg_indexes where schemaname = 'public' and indexname like '%_idx'",
+    );
+    expect(rows.map((row) => row.indexname).sort()).toEqual([
+      'change_log_entity_idx',
+      'employees_country_code_idx',
+      'employees_department_idx',
+      'employees_employment_type_idx',
+      'employees_full_name_trgm_idx',
+      'employees_job_title_idx',
+      'employees_status_idx',
+      'pay_changes_employee_id_effective_from_idx',
+      'pay_items_employee_id_effective_from_idx',
+      'pay_items_one_open_item_idx',
+    ]);
+  });
 });

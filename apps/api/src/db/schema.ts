@@ -132,6 +132,16 @@ export const employees = pgTable(
       sql`(${table.status} = 'inactive') = (${table.inactiveOn} is not null)`,
     ),
     check('employees_fte_check', sql`${table.fte} > 0 and ${table.fte} <= 1`),
+    index('employees_country_code_idx').on(table.countryCode),
+    index('employees_department_idx').on(table.department),
+    index('employees_job_title_idx').on(table.jobTitle),
+    index('employees_employment_type_idx').on(table.employmentType),
+    index('employees_status_idx').on(table.status),
+    // Partial name search; queries must use the same expression to use the index.
+    index('employees_full_name_trgm_idx').using(
+      'gin',
+      sql`(${table.firstName} || ' ' || ${table.lastName}) gin_trgm_ops`,
+    ),
   ],
 );
 
@@ -152,6 +162,7 @@ export const payChanges = pgTable(
   },
   (table) => [
     check('pay_changes_reason_check', sql`${table.reason} in ${allowedValues(PAY_CHANGE_REASONS)}`),
+    index('pay_changes_employee_id_effective_from_idx').on(table.employeeId, table.effectiveFrom),
   ],
 );
 
@@ -192,6 +203,7 @@ export const payItems = pgTable(
     uniqueIndex('pay_items_one_open_item_idx')
       .on(table.employeeId, table.componentId)
       .where(sql`${table.effectiveTo} is null`),
+    index('pay_items_employee_id_effective_from_idx').on(table.employeeId, table.effectiveFrom),
   ],
 );
 
