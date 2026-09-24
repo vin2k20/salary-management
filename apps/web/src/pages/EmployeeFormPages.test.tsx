@@ -1,8 +1,9 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
 import { renderApp } from '../test/render-app.tsx';
+import { components, frequencies, ids, payTotals } from '../test/pay-data.ts';
 import { chooseOption } from '../test/select.ts';
 
 const newId = '55555555-5555-4555-8555-555555555555';
@@ -46,9 +47,17 @@ function formApi(
         { status: 201 },
       ),
     [`GET /api/employees/${newId}`]: () =>
-      Response.json({ employee: { ...priya, id: newId, firstName: 'Maria', lastName: 'Lopez' } }),
+      Response.json({
+        employee: { ...priya, id: newId, firstName: 'Maria', lastName: 'Lopez' },
+        payTotals,
+      }),
     [`GET /api/employees/${newId}/change-log`]: () => Response.json({ items: [] }),
-    [`GET /api/employees/${priya.id}`]: () => Response.json({ employee: priya }),
+    [`GET /api/employees/${priya.id}`]: () => Response.json({ employee: priya, payTotals }),
+    'GET /api/pay-components': ({ query }) =>
+      Response.json({
+        items: query.get('country') === 'US' ? components.US : components.IN,
+        frequencies,
+      }),
     [`GET /api/employees/${priya.id}/change-log`]: () => Response.json({ items: [] }),
     ...overrides,
   });
@@ -128,6 +137,35 @@ describe('adding an employee', () => {
       fte: 0.5,
       hireDate: '2026-10-01',
       countryFields: { flsaStatus: 'non_exempt' },
+      startingPay: [],
+    });
+  });
+
+  it("sets starting pay in the country's currency", async () => {
+    const user = userEvent.setup();
+    const { calls } = formApi();
+    renderApp('/employees/new');
+    await screen.findByRole('heading', { name: 'Add an employee' });
+
+    expect(screen.getByRole('button', { name: 'Add component' })).toBeDisabled();
+    await fillCommonFields(user);
+    await chooseOption(user, 'Country', 'United States');
+    await chooseOption(user, 'State', 'Texas');
+    await user.click(screen.getByRole('button', { name: 'Add component' }));
+    const line = screen.getByRole('group', { name: 'Pay component 1' });
+    await chooseOption(user, 'Component', 'Base salary or wages');
+    expect(within(line).getByRole('combobox', { name: 'Frequency' })).toHaveTextContent(
+      'Every two weeks',
+    );
+    await user.type(within(line).getByLabelText('Amount'), '4000');
+    await user.click(screen.getByRole('button', { name: 'Add employee' }));
+
+    await screen.findByRole('heading', { name: 'Maria Lopez' });
+    expect(calls.find((call) => call.method === 'POST')?.body).toMatchObject({
+      countryCode: 'US',
+      startingPay: [
+        { componentId: ids.usBase, amount: '4000', currency: 'USD', frequency: 'bi_weekly' },
+      ],
     });
   });
 
