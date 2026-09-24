@@ -16,6 +16,10 @@ export default defineConfig(
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      // Allow leaving out a field with a rest pattern: const { secret, ...rest } = value.
+      '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
+    },
   },
   {
     files: ['apps/web/**/*.{ts,tsx}'],

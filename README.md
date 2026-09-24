@@ -49,6 +49,7 @@ Prerequisites: Node.js 24 (see `.nvmrc`; with nvm, run `nvm use`) and npm 11.
 npm install
 cp apps/api/.env.example apps/api/.env   # then set DATABASE_URL
 npm run db:migrate -w @salary/api
+npm run db:seed -w @salary/api
 npm run check
 npm run dev
 ```
@@ -90,7 +91,25 @@ PostgreSQL, accessed with Drizzle ORM. The schema is defined in `apps/api/src/db
 
 The migrations also load the reference data: the four countries and their currencies, the eight pay frequencies and the system pay components per country. Pay totals come from the `current_pay_totals` view, built on the `pay_totals_on(date)` function, which adds up the pay items that apply on a date as annual amounts in local currency.
 
-Seed data for 10,000 employees is added in step 06.
+### Seed data
+
+`npm run db:seed -w @salary/api` loads a synthetic data set for the dashboard, filters and peer comparison. It is generated with Faker from a fixed seed and a fixed reference date, so every run loads exactly the same data:
+
+- 10,000 employees: 6,000 in India, 1,500 in the USA, 1,500 in Canada and 1,000 in Australia, with names in each country's style, regions, ten departments and six levels.
+- About 80% full-time, 8% part-time, 8% contractors and 4% interns, and about 5% inactive.
+- Pay components and approximate 2026 rates per country from the research notes, with employer contributions as amounts; contractors get a contract fee and interns a stipend. A few employees are paid well above or below their peers.
+- One to three pay changes per employee: the hire, then up to two yearly revisions or promotions (April in India, January elsewhere). About 18,000 pay changes and 114,000 pay items.
+- Starting exchange rates to US dollars, marked with the source `seed`.
+
+Emails use the reserved `example.com` domain, and no real personal data or pay is used.
+
+| Option | What it does |
+|---|---|
+| `-- --reset` | Replace existing employees, pay and seed exchange rates. Reference data is kept. Without it, the script stops if employees exist. |
+| `-- --count 2000` | Load fewer employees, keeping the same country split. |
+| `-- --seed 42` | Generate a different data set. |
+
+The load runs in one transaction, so a failed run changes nothing. Against the Neon development branch it takes about 45 seconds.
 
 ## Tests
 

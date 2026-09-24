@@ -61,5 +61,6 @@ Run from the repository root. Node.js 24 is required (`.nvmrc`).
 - `npm run dev`: start the API (port 3000) and the web app (port 5173) in watch mode.
 - `npm run build`: build the web app. The API runs from its TypeScript source and has no build.
 - `npm run db:migrate -w @salary/api`: apply migrations to the database in `apps/api/.env`.
+- `npm run db:seed -w @salary/api`: load the 10,000-employee seed data; add `-- --reset` to replace existing data.
 - `npm run db:generate -w @salary/api`: write a migration after changing `apps/api/src/db/schema.ts`. Custom SQL (views, functions, reference data) uses `npx drizzle-kit generate --custom --name=<name>` in `apps/api`.
 - Run one workspace with `-w`, for example `npm test -w @salary/api`.
