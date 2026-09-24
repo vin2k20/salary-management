@@ -50,4 +50,14 @@ Read before working on anything:
 
 ## Commands
 
-Filled in during step 01, when the tooling is set up.
+Run from the repository root. Node.js 24 is required (`.nvmrc`).
+
+- `npm install`: install all workspaces.
+- `npm run check`: lint, format check, type check and all tests. Run before asking to commit.
+- `npm run lint`: ESLint with type-aware rules.
+- `npm run format` / `npm run format:check`: Prettier (Markdown files are not formatted).
+- `npm run typecheck`: TypeScript in every workspace.
+- `npm test`: Vitest in every workspace.
+- `npm run build`: build every workspace that has a build script.
+- `npm run dev`: start every workspace that has a dev script.
+- Run one workspace with `-w`, for example `npm test -w @salary/api`.

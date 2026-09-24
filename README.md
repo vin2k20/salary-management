@@ -2,7 +2,7 @@
 
 A web application where global and country HR managers maintain pay data for 10,000 employees in India, the USA, Canada and Australia, and see how the organisation pays people on a dashboard.
 
-Status: design complete, build not started. This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
+Status: tooling set up, features not started. This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
 
 ## Overview
 
@@ -22,16 +22,36 @@ To be completed in step 03. Summary and diagram from the [high level design](doc
 
 ## Tech stack
 
-To be completed in step 01. Choices and reasons are in the [decisions log](docs/decisions-and-questions.md).
+- TypeScript in strict mode, in one repository with npm workspaces:
+  - `apps/api`: Express API (from step 03)
+  - `apps/web`: React app built with Vite (from step 03)
+  - `packages/shared`: Zod schemas, types and rules shared by the API and the web app
+- Node.js 24, ESLint and Prettier, Vitest.
+
+Choices and reasons are in the [decisions log](docs/decisions-and-questions.md).
 
 ## Getting started
 
-To be completed in step 01.
+Prerequisites: Node.js 24 (see `.nvmrc`; with nvm, run `nvm use`) and npm 11.
 
-- Prerequisites (Node.js version in `.nvmrc`)
-- Install
-- Environment variables
-- Run the API and the web app locally
+```bash
+npm install
+npm run check
+```
+
+`npm run check` runs lint, the format check, the type check and all tests. Other root scripts:
+
+| Script | What it does |
+|---|---|
+| `npm run lint` | ESLint with type-aware rules |
+| `npm run format` | Format files with Prettier |
+| `npm run format:check` | Check formatting without changing files |
+| `npm run typecheck` | Type check every workspace |
+| `npm test` | Run the tests in every workspace |
+| `npm run build` | Build every workspace that has a build script |
+| `npm run dev` | Start every workspace that has a dev script |
+
+Environment variables and running the API and the web app locally are added in step 03.
 
 ## Database and seed data
 
@@ -39,7 +59,7 @@ To be completed in steps 05 and 06.
 
 ## Tests
 
-To be completed in step 01, and extended as test types are added.
+Each workspace uses Vitest, with test files next to the code they test (`*.test.ts`). Run all tests with `npm test`, or one workspace with `npm test -w @salary/api`. Test types are added as the build goes on: API tests with Supertest and PGlite, UI tests with React Testing Library, and a Playwright smoke test.
 
 ## Deployment
 
