@@ -2,20 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { loginRequestSchema, type LoginRequest } from '@salary/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Navigate, useLocation, useNavigate } from 'react-router';
-import { ApiError } from '../api/client.ts';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
+import { errorMessage } from '../api/errors.ts';
 import { currentUserQueryKey, login, useCurrentUser } from '../auth/session.ts';
+import { AuthCard } from '../components/auth-card.tsx';
+import { TextField } from '../components/text-field.tsx';
 import { Alert } from '../components/ui/alert.tsx';
 import { Button } from '../components/ui/button.tsx';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../components/ui/card.tsx';
-import { Input } from '../components/ui/input.tsx';
-import { Label } from '../components/ui/label.tsx';
 
 function returnPath(state: unknown): string {
   if (typeof state === 'object' && state !== null && 'from' in state) {
@@ -47,69 +40,43 @@ export function LoginPage() {
   if (currentUser.data) return <Navigate to={target} replace />;
 
   const { errors } = form.formState;
-  const serverError =
-    signIn.error instanceof ApiError
-      ? signIn.error.message
-      : signIn.error
-        ? 'Something went wrong. Try again.'
-        : null;
+  const serverError = errorMessage(signIn.error);
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>ACME Salary Management</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            noValidate
-            className="flex flex-col gap-4"
-            onSubmit={(event) => {
-              void form.handleSubmit((values) => {
-                signIn.mutate(values);
-              })(event);
-            }}
-          >
-            {serverError && <Alert>{serverError}</Alert>}
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="username"
-                aria-invalid={errors.email ? true : undefined}
-                aria-describedby={errors.email ? 'email-error' : undefined}
-                {...form.register('email')}
-              />
-              {errors.email && (
-                <p id="email-error" className="text-sm text-destructive">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                aria-invalid={errors.password ? true : undefined}
-                aria-describedby={errors.password ? 'password-error' : undefined}
-                {...form.register('password')}
-              />
-              {errors.password && (
-                <p id="password-error" className="text-sm text-destructive">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-            <Button type="submit" disabled={signIn.isPending}>
-              {signIn.isPending ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthCard title="Sign in">
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          void form.handleSubmit((values) => {
+            signIn.mutate(values);
+          })(event);
+        }}
+      >
+        {serverError && <Alert>{serverError}</Alert>}
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="username"
+          error={errors.email}
+          {...form.register('email')}
+        />
+        <TextField
+          id="password"
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          error={errors.password}
+          {...form.register('password')}
+        />
+        <Button type="submit" disabled={signIn.isPending}>
+          {signIn.isPending ? 'Signing in...' : 'Sign in'}
+        </Button>
+        <Link to="/forgot-password" className="text-center text-sm underline">
+          Forgot your password?
+        </Link>
+      </form>
+    </AuthCard>
   );
 }
