@@ -48,11 +48,30 @@ export async function apiSend(path: string, options: RequestOptions = {}): Promi
   await send(path, options);
 }
 
+/** The messages of a validation problem's field errors, which say what to fix. */
+function fieldMessages(body: object): string[] {
+  if (!('errors' in body) || !Array.isArray(body.errors)) return [];
+  return body.errors.flatMap((error: unknown) =>
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+      ? [error.message]
+      : [],
+  );
+}
+
+/**
+ * The message of an error answer: the field errors when the API sent them, since they say what
+ * to fix, otherwise the problem's detail.
+ */
 async function problemDetail(response: Response): Promise<string> {
   try {
     const body: unknown = await response.json();
-    if (typeof body === 'object' && body !== null && 'detail' in body) {
-      if (typeof body.detail === 'string') return body.detail;
+    if (typeof body === 'object' && body !== null) {
+      const messages = fieldMessages(body);
+      if (messages.length > 0) return `${messages.join('. ')}.`;
+      if ('detail' in body && typeof body.detail === 'string') return body.detail;
     }
   } catch {
     // Not JSON: fall through to the general message.

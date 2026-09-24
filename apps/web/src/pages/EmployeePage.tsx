@@ -1,4 +1,4 @@
-import type { UpdateEmployeeRequest } from '@salary/shared';
+import { COUNTRIES, type UpdateEmployeeRequest } from '@salary/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router';
@@ -10,8 +10,12 @@ import { CurrentPay } from '../employees/CurrentPay.tsx';
 import { EmployeeChangeLog } from '../employees/EmployeeChangeLog.tsx';
 import { EmployeeDetails } from '../employees/EmployeeDetails.tsx';
 import { MarkInactivePanel } from '../employees/MarkInactivePanel.tsx';
+import { PayChangeDialog } from '../employees/PayChangeDialog.tsx';
+import { PayHistory } from '../employees/PayHistory.tsx';
 import { PaySummary } from '../employees/PaySummary.tsx';
-import { employeeSaved, updateEmployee, useEmployee } from '../employees/api.ts';
+import { employeeSaved, payChanged, updateEmployee, useEmployee } from '../employees/api.ts';
+
+type OpenDialog = 'none' | 'pay-change';
 
 /** One employee's record: details, pay, actions and history (HLD 3.1). */
 export function EmployeePage() {
@@ -19,6 +23,7 @@ export function EmployeePage() {
   const employee = useEmployee(id);
   const data = employee.data?.employee;
   const queryClient = useQueryClient();
+  const [dialog, setDialog] = useState<OpenDialog>('none');
   const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const setStatus = useMutation({
@@ -121,7 +126,28 @@ export function EmployeePage() {
 
           <Card className="mt-6">
             <CardContent className="pt-6">
-              <CurrentPay employeeId={data.id} />
+              <CurrentPay
+                employeeId={data.id}
+                action={
+                  data.status === 'active' && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setNotice(null);
+                        setDialog('pay-change');
+                      }}
+                    >
+                      Record pay change
+                    </Button>
+                  )
+                }
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardContent className="pt-6">
+              <PayHistory employeeId={data.id} />
             </CardContent>
           </Card>
 
@@ -147,6 +173,22 @@ export function EmployeePage() {
             </CardContent>
           </Card>
 
+          {dialog === 'pay-change' && (
+            <PayChangeDialog
+              open
+              onOpenChange={(open) => {
+                if (!open) setDialog('none');
+              }}
+              employeeId={data.id}
+              countryCode={data.countryCode}
+              currency={COUNTRIES[data.countryCode].currencyCode}
+              onSaved={() => {
+                setDialog('none');
+                setNotice('Pay change saved.');
+                void payChanged(queryClient, data.id);
+              }}
+            />
+          )}
         </>
       )}
     </>
