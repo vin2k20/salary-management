@@ -6,16 +6,18 @@ import { errorMessage } from '../api/errors.ts';
 import { Alert } from '../components/ui/alert.tsx';
 import { Button, ButtonLink } from '../components/ui/button.tsx';
 import { Card, CardContent } from '../components/ui/card.tsx';
+import { CurrentPay } from '../employees/CurrentPay.tsx';
 import { EmployeeChangeLog } from '../employees/EmployeeChangeLog.tsx';
 import { EmployeeDetails } from '../employees/EmployeeDetails.tsx';
 import { MarkInactivePanel } from '../employees/MarkInactivePanel.tsx';
+import { PaySummary } from '../employees/PaySummary.tsx';
 import { employeeSaved, updateEmployee, useEmployee } from '../employees/api.ts';
 
-/** One employee's record: details, actions and history (HLD 3.1). */
+/** One employee's record: details, pay, actions and history (HLD 3.1). */
 export function EmployeePage() {
   const { id = '' } = useParams();
   const employee = useEmployee(id);
-  const data = employee.data;
+  const data = employee.data?.employee;
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -57,9 +59,14 @@ export function EmployeePage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {data.jobTitle}, {data.department}
               </p>
+              {employee.data && (
+                <div className="mt-4">
+                  <PaySummary totals={employee.data.payTotals} />
+                </div>
+              )}
             </div>
             {!confirming && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <ButtonLink to={`/employees/${data.id}/edit`} variant="secondary">
                   Edit
                 </ButtonLink>
@@ -114,6 +121,12 @@ export function EmployeePage() {
 
           <Card className="mt-6">
             <CardContent className="pt-6">
+              <CurrentPay employeeId={data.id} />
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardContent className="pt-6">
               <section aria-labelledby="details-heading">
                 <h2 id="details-heading" className="mb-4 text-lg font-medium">
                   Details
@@ -133,6 +146,7 @@ export function EmployeePage() {
               </section>
             </CardContent>
           </Card>
+
         </>
       )}
     </>

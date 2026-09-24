@@ -1,11 +1,20 @@
 import {
   changeLogResponseSchema,
+  currentPayResponseSchema,
+  employeeDetailResponseSchema,
   employeeListResponseSchema,
   employeeResponseSchema,
+  payComponentListResponseSchema,
+  payHistoryResponseSchema,
+  recordPayChangeResponseSchema,
   referenceDataSchema,
+  type CountryCode,
   type CreateEmployeeRequest,
   type Employee,
+  type EmployeeDetailResponse,
   type EmployeeListQuery,
+  type PayChangeRequestBody,
+  type TransferRequest,
   type UpdateEmployeeRequest,
 } from '@salary/shared';
 import { keepPreviousData, useQuery, type QueryClient } from '@tanstack/react-query';
@@ -57,15 +66,12 @@ export function employeeQueryKey(id: string) {
   return ['employee', id] as const;
 }
 
+/** An employee's details and today's pay totals. */
 export function useEmployee(id: string) {
   return useQuery({
     queryKey: employeeQueryKey(id),
-    queryFn: async ({ signal }) => {
-      const { employee } = await apiRequest(`/api/employees/${id}`, employeeResponseSchema, {
-        signal,
-      });
-      return employee;
-    },
+    queryFn: ({ signal }) =>
+      apiRequest(`/api/employees/${id}`, employeeDetailResponseSchema, { signal }),
   });
 }
 
@@ -98,10 +104,69 @@ export async function updateEmployee(id: string, request: UpdateEmployeeRequest)
  * and the filter choices, which may now include a new job title or department.
  */
 export async function employeeSaved(queryClient: QueryClient, employee: Employee) {
-  queryClient.setQueryData(employeeQueryKey(employee.id), employee);
+  queryClient.setQueryData(employeeQueryKey(employee.id), (old?: EmployeeDetailResponse) =>
+    old ? { ...old, employee } : old,
+  );
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: [...employeeQueryKey(employee.id), 'change-log'] }),
     queryClient.invalidateQueries({ queryKey: ['employees'] }),
     queryClient.invalidateQueries({ queryKey: ['reference'] }),
+  ]);
+}
+
+/** Components usable in a country, and the pay frequencies. */
+export function usePayComponents(country: CountryCode | undefined) {
+  return useQuery({
+    queryKey: ['pay-components', country],
+    queryFn: ({ signal }) =>
+      apiRequest(`/api/pay-components?country=${country ?? ''}`, payComponentListResponseSchema, {
+        signal,
+      }),
+    enabled: country !== undefined,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCurrentPay(id: string) {
+  return useQuery({
+    queryKey: [...employeeQueryKey(id), 'pay'],
+    queryFn: ({ signal }) =>
+      apiRequest(`/api/employees/${id}/pay`, currentPayResponseSchema, { signal }),
+  });
+}
+
+export function usePayHistory(id: string) {
+  return useQuery({
+    queryKey: [...employeeQueryKey(id), 'pay-changes'],
+    queryFn: ({ signal }) =>
+      apiRequest(`/api/employees/${id}/pay-changes`, payHistoryResponseSchema, { signal }),
+  });
+}
+
+export async function recordPayChange(id: string, request: PayChangeRequestBody) {
+  const { payChange } = await apiRequest(
+    `/api/employees/${id}/pay-changes`,
+    recordPayChangeResponseSchema,
+    { method: 'POST', body: request },
+  );
+  return payChange;
+}
+
+export async function transferEmployee(id: string, request: TransferRequest) {
+  const { employee } = await apiRequest(`/api/employees/${id}/transfer`, employeeResponseSchema, {
+    method: 'POST',
+    body: request,
+  });
+  return employee;
+}
+
+/**
+ * After pay changes or a move: refresh everything about the employee (details, totals, pay,
+ * history and change log) and the directory, whose totals and countries may change.
+ */
+export async function payChanged(queryClient: QueryClient, id: string) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: employeeQueryKey(id) }),
+    queryClient.invalidateQueries({ queryKey: ['employees'] }),
   ]);
 }
