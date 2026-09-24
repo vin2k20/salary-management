@@ -23,7 +23,11 @@ export interface RequireAuthOptions {
   jwtSecret: string;
 }
 
-/** Rejects the request with 401 unless it carries a valid session for an existing user. */
+/**
+ * Rejects the request with 401 unless it carries a valid, unexpired session for an active user
+ * whose token version still matches. The user is read on every request, so deactivation, a
+ * password reset or a role change applies straight away.
+ */
 export function requireAuth({ db, clock, jwtSecret }: RequireAuthOptions): RequestHandler {
   return async (req, _res, next) => {
     // cookie-parser types the cookies as any; they are strings keyed by name.
@@ -32,7 +36,7 @@ export function requireAuth({ db, clock, jwtSecret }: RequireAuthOptions): Reque
     const claims =
       typeof token === 'string' ? await readSessionToken(token, jwtSecret, clock) : null;
     const user = claims ? await findUserById(db, claims.userId) : undefined;
-    if (!user) {
+    if (!user?.isActive || user.tokenVersion !== claims?.tokenVersion) {
       throw new HttpError(401, 'Sign in to continue');
     }
     req.auth = { user: toCurrentUser(user) };

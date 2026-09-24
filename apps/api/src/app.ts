@@ -7,6 +7,7 @@ import type { Database } from './db/client.ts';
 import { errorHandler, notFoundHandler } from './http/problem-details.ts';
 import { requestLogger } from './http/request-logger.ts';
 import { authRouter, type AuthSettings } from './modules/auth/auth.routes.ts';
+import { requireAuth } from './modules/auth/require-auth.ts';
 import { healthRouter } from './modules/health/health.routes.ts';
 
 export interface AppDependencies {
@@ -33,6 +34,9 @@ export function createApp({
 
   app.use('/api/health', healthRouter(db));
   app.use('/api/auth', authRouter({ db, clock, auth }));
+
+  // Everything else under /api needs a session, so unknown paths answer 401 before 404.
+  app.use('/api', requireAuth({ db, clock, jwtSecret: auth.jwtSecret }));
 
   app.use(notFoundHandler());
   app.use(errorHandler());
