@@ -1,10 +1,8 @@
-import { AppShell } from './app/AppShell.tsx';
-import { HomePage } from './pages/HomePage.tsx';
+import { RouterProvider, createBrowserRouter } from 'react-router';
+import { routes } from './routes.tsx';
+
+const router = createBrowserRouter(routes);
 
 export function App() {
-  return (
-    <AppShell>
-      <HomePage />
-    </AppShell>
-  );
+  return <RouterProvider router={router} />;
 }
