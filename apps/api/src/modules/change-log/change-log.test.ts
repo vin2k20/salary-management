@@ -4,7 +4,7 @@ import type { Clock } from '../../clock.ts';
 import { changeLog, employees } from '../../db/schema.ts';
 import { insertEmployee } from '../../test/fixtures.ts';
 import { createTestDatabase, type TestDatabase } from '../../test/test-database.ts';
-import { diffFields, recordChange } from './change-log.ts';
+import { changeLogFor, diffFields, recordChange } from './change-log.ts';
 
 const fixedClock: Clock = { now: () => new Date('2026-09-24T10:00:00Z') };
 
@@ -139,5 +139,32 @@ describe('recordChange', () => {
     );
 
     expect(await logFor(employee.id)).toEqual([]);
+  });
+
+  it('reads entries newest first, only for countries in the caller scope', async () => {
+    const employee = await insertEmployee(database.db);
+    const entry = (countryCode: string, department: string) => ({
+      entityType: 'employee' as const,
+      entityId: employee.id,
+      action: 'updated' as const,
+      changes: { department: { old: null, new: department } },
+      countryCode,
+      changedBy: null,
+    });
+    await recordChange(database.db, entry('US', 'Sales'), fixedClock);
+    await recordChange(database.db, entry('IN', 'Marketing'), {
+      now: () => new Date('2026-09-25T10:00:00Z'),
+    });
+
+    const all = await changeLogFor(database.db, { kind: 'all' }, 'employee', employee.id);
+    const india = await changeLogFor(
+      database.db,
+      { kind: 'country', countryCode: 'IN' },
+      'employee',
+      employee.id,
+    );
+
+    expect(all.map((item) => item.changes.department?.new)).toEqual(['Marketing', 'Sales']);
+    expect(india.map((item) => item.changes.department?.new)).toEqual(['Marketing']);
   });
 });

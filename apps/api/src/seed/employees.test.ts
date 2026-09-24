@@ -1,3 +1,4 @@
+import { createEmployeeRequestSchema } from '@salary/shared';
 import { describe, expect, it } from 'vitest';
 import { generateEmployees } from './employees.ts';
 
@@ -22,6 +23,14 @@ describe('generateEmployees', () => {
 
     for (const field of ['id', 'employeeCode', 'email'] as const) {
       expect(new Set(employees.map((employee) => employee[field])).size).toBe(employees.length);
+    }
+  });
+
+  it('passes the same checks as an employee added through the API', () => {
+    for (const employee of generateEmployees(options)) {
+      const result = createEmployeeRequestSchema.safeParse(employee);
+
+      expect(result.error?.issues ?? [], employee.employeeCode).toEqual([]);
     }
   });
 });

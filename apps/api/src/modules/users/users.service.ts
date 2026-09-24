@@ -4,13 +4,14 @@ import type {
   CurrentUser,
   UpdateUserRequest,
 } from '@salary/shared';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
-import { changeLog, users } from '../../db/schema.ts';
+import { users } from '../../db/schema.ts';
 import { HttpError, RequestValidationError } from '../../http/errors.ts';
 import { issueAuthToken } from '../auth/auth-tokens.ts';
-import { diffFields, recordChange } from '../change-log/change-log.ts';
+import type { Scope } from '../auth/scope.ts';
+import { changeLogFor, diffFields, recordChange } from '../change-log/change-log.ts';
 import { checkUserUpdate } from './user-rules.ts';
 import { findUser, type UserRecord } from './users.repository.ts';
 
@@ -132,29 +133,11 @@ export async function reissueInvite(
 }
 
 /** Change log of one user, newest first, with who made each change. */
-export async function userChangeLog(db: Database, id: string): Promise<ChangeLogEntry[]> {
+export async function userChangeLog(
+  db: Database,
+  scope: Scope,
+  id: string,
+): Promise<ChangeLogEntry[]> {
   await findOrThrow(db, id);
-  const rows = await db
-    .select({
-      id: changeLog.id,
-      action: changeLog.action,
-      changes: changeLog.changes,
-      changedAt: changeLog.changedAt,
-      changedById: users.id,
-      changedByName: users.name,
-    })
-    .from(changeLog)
-    .leftJoin(users, eq(users.id, changeLog.changedBy))
-    .where(and(eq(changeLog.entityType, 'user'), eq(changeLog.entityId, id)))
-    .orderBy(desc(changeLog.changedAt));
-  return rows.map((row) => ({
-    id: row.id,
-    action: row.action,
-    changes: row.changes,
-    changedAt: row.changedAt.toISOString(),
-    changedBy:
-      row.changedById && row.changedByName
-        ? { id: row.changedById, name: row.changedByName }
-        : null,
-  }));
+  return changeLogFor(db, scope, 'user', id);
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { errorMessage } from '../api/errors.ts';
 import { Alert } from '../components/ui/alert.tsx';
-import { Button } from '../components/ui/button.tsx';
+import { Button, ButtonLink } from '../components/ui/button.tsx';
 import { Label } from '../components/ui/label.tsx';
 import {
   Select,
@@ -36,7 +36,10 @@ export function EmployeesPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Employees</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Employees</h1>
+        <ButtonLink to="/employees/new">Add employee</ButtonLink>
+      </div>
       <div className="mt-4">
         <DirectoryFilters
           key={filtersKey}

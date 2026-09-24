@@ -5,6 +5,7 @@ import {
   type EmployeeSortField,
 } from '@salary/shared';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
+import { Link } from 'react-router';
 import { cn } from '../lib/cn.ts';
 import { EMPLOYMENT_TYPE_LABELS } from './labels.ts';
 
@@ -19,9 +20,9 @@ const columns = helper.columns([
     meta: { sort: 'name', align: 'left' },
     cell: ({ row }) => (
       <>
-        <div className="font-medium">
+        <Link to={`/employees/${row.original.id}`} className="font-medium hover:underline">
           {row.original.firstName} {row.original.lastName}
-        </div>
+        </Link>
         <div className="text-muted-foreground">{row.original.employeeCode}</div>
       </>
     ),

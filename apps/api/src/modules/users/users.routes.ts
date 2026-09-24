@@ -38,6 +38,11 @@ function actor(req: Request) {
   return req.auth.user;
 }
 
+function callerScope(req: Request) {
+  if (!req.auth) throw new HttpError(401, 'Sign in to continue');
+  return req.auth.scope;
+}
+
 /** User management for global HR users (HLD 3.3). */
 export function usersRouter({ db, clock, emailSender, appUrl }: UsersRouterOptions): Router {
   const router = Router();
@@ -86,7 +91,9 @@ export function usersRouter({ db, clock, emailSender, appUrl }: UsersRouterOptio
   });
 
   router.get('/:id/change-log', async (req, res) => {
-    const body: ChangeLogResponse = { items: await userChangeLog(db, userId(req)) };
+    const body: ChangeLogResponse = {
+      items: await userChangeLog(db, callerScope(req), userId(req)),
+    };
     res.json(body);
   });
 
