@@ -744,7 +744,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 06 | Done | [#8](https://github.com/vin2k20/salary-management/pull/8) | 24 Sep 2026 | Seed details (D43); reset and reload in about 45 seconds |
 | 07 | Done | [#9](https://github.com/vin2k20/salary-management/pull/9) | 24 Sep 2026 | Sign-in details (D44), web foundations (D45); rate limit sees the client IP in production |
 | 08 | Done | [#10](https://github.com/vin2k20/salary-management/pull/10) | 24 Sep 2026 | Reset and invite details (D46); real email through Brevo checked |
-| 09 | Not started | | | |
+| 09 | Done | [#11](https://github.com/vin2k20/salary-management/pull/11) | 24 Sep 2026 | User management rules (D48); main branch ruleset (D47) |
 | 10 | Not started | | | |
 | 11 | Not started | | | |
 | 12 | Not started | | | |
