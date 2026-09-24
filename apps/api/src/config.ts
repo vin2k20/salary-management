@@ -10,6 +10,7 @@ export interface Config extends ScriptConfig {
   port: number;
   nodeEnv: 'development' | 'test' | 'production';
   jwtSecret: string;
+  trustProxy: boolean;
 }
 
 const scriptEnvSchema = z.object({
@@ -25,6 +26,7 @@ const serverEnvSchema = scriptEnvSchema.extend({
   JWT_SECRET: z
     .string({ error: 'JWT_SECRET is required' })
     .min(32, 'JWT_SECRET must be at least 32 characters'),
+  TRUST_PROXY: z.enum(['true', 'false']).default('false'),
 });
 
 function parse<T extends z.ZodType>(schema: T, env: Record<string, string | undefined>) {
@@ -50,5 +52,6 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     databaseUrl: data.DATABASE_URL,
     nodeEnv: data.NODE_ENV,
     jwtSecret: data.JWT_SECRET,
+    trustProxy: data.TRUST_PROXY === 'true',
   };
 }

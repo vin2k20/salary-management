@@ -13,13 +13,20 @@ describe('loadConfig', () => {
       databaseUrl,
       nodeEnv: 'development',
       jwtSecret,
+      trustProxy: false,
     });
   });
 
   it('reads the port, log level and environment', () => {
     expect(
-      loadConfig({ ...required, PORT: '4000', LOG_LEVEL: 'debug', NODE_ENV: 'production' }),
-    ).toMatchObject({ port: 4000, logLevel: 'debug', nodeEnv: 'production' });
+      loadConfig({
+        ...required,
+        PORT: '4000',
+        LOG_LEVEL: 'debug',
+        NODE_ENV: 'production',
+        TRUST_PROXY: 'true',
+      }),
+    ).toMatchObject({ port: 4000, logLevel: 'debug', nodeEnv: 'production', trustProxy: true });
   });
 
   it('rejects an invalid port or log level', () => {

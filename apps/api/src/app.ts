@@ -15,6 +15,8 @@ export interface AppDependencies {
   db: Database;
   clock: Clock;
   auth: AuthSettings;
+  /** Trust X-Forwarded-For from the proxies in front of the API (Vercel and Render). */
+  trustProxy?: boolean;
   generateRequestId?: () => string;
 }
 
@@ -23,9 +25,11 @@ export function createApp({
   db,
   clock,
   auth,
+  trustProxy = false,
   generateRequestId,
 }: AppDependencies): Express {
   const app = express();
+  app.set('trust proxy', trustProxy);
 
   app.use(helmet());
   app.use(requestLogger(logger, generateRequestId));

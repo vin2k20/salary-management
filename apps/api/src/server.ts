@@ -12,6 +12,7 @@ const app = createApp({
   db: database.db,
   clock: systemClock,
   auth: { jwtSecret: config.jwtSecret, secureCookies: config.nodeEnv === 'production' },
+  trustProxy: config.trustProxy,
 });
 
 const server = app.listen(config.port, (error) => {

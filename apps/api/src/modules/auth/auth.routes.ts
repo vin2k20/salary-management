@@ -5,6 +5,7 @@ import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseBody } from '../../http/validation.ts';
+import { loginRateLimits } from './login-rate-limit.ts';
 import { hashPassword, verifyPassword } from './passwords.ts';
 import { requireAuth } from './require-auth.ts';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, createSessionToken } from './session.ts';
@@ -36,7 +37,7 @@ export function authRouter({
     path: '/',
   };
 
-  router.post('/login', async (req, res) => {
+  router.post('/login', ...loginRateLimits(), async (req, res) => {
     const { email, password } = parseBody(loginRequestSchema, req.body);
     const user = await findUserByEmail(db, email);
     dummyHash ??= hashPassword(randomUUID());
