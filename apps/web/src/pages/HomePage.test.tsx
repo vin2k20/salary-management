@@ -14,7 +14,8 @@ function renderHomePage() {
 
 function stubFetch(response: Response | Error) {
   const fetchMock = vi.fn(() =>
-    response instanceof Error ? Promise.reject(response) : Promise.resolve(response),
+    // A copy for each call: the page makes more than one request, and a body can be read once.
+    response instanceof Error ? Promise.reject(response) : Promise.resolve(response.clone()),
   );
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
@@ -65,5 +66,60 @@ describe('HomePage', () => {
     renderHomePage();
 
     await expectStatus('Unavailable', 'Unknown');
+  });
+});
+
+describe('HomePage exchange rates', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('lists the latest rates and their date', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string) =>
+        Promise.resolve(
+          input === '/api/fx-rates/latest'
+            ? Response.json({
+                rateDate: '2026-09-24',
+                rates: { USD: '1', CAD: '1.4117', AUD: '1.4232', INR: '95.96' },
+                stale: false,
+              })
+            : Response.json({ status: 'ok', database: 'ok' }),
+        ),
+      ),
+    );
+
+    renderHomePage();
+
+    expect(await screen.findByText('1 USD = 95.96 INR')).toBeInTheDocument();
+    expect(screen.getByText('1 USD = 1.4117 CAD')).toBeInTheDocument();
+    expect(screen.getByText('Rates of 24 Sep 2026')).toBeInTheDocument();
+    expect(screen.queryByText(/more than 3 days old/)).not.toBeInTheDocument();
+  });
+
+  it('warns when the rates are more than three days old', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string) =>
+        Promise.resolve(
+          input === '/api/fx-rates/latest'
+            ? Response.json({
+                rateDate: '2026-09-01',
+                rates: { USD: '1', INR: '88.2' },
+                stale: true,
+              })
+            : Response.json({ status: 'ok', database: 'ok' }),
+        ),
+      ),
+    );
+
+    renderHomePage();
+
+    expect(
+      await screen.findByText(
+        'These rates are more than 3 days old, so amounts in US dollars may be out of date.',
+      ),
+    ).toBeInTheDocument();
   });
 });
