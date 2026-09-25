@@ -67,7 +67,7 @@ export function createApp({
   app.use('/api/employees', employeesRouter({ db, clock }));
   app.use('/api/employees', compensationRouter({ db, clock }));
   app.use('/api/reference', referenceRouter({ db }));
-  app.use('/api/pay-components', payComponentsRouter({ db }));
+  app.use('/api/pay-components', payComponentsRouter({ db, clock }));
 
   app.use(notFoundHandler());
   app.use(errorHandler());
