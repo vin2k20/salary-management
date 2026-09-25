@@ -247,8 +247,13 @@ describe('EmployeesPage dropdowns', () => {
 });
 
 describe('EmployeesPage export', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_FILE_TRANSFERS', 'enabled');
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('offers Excel and CSV downloads of the filtered employees and their pay', async () => {
@@ -287,8 +292,13 @@ describe('EmployeesPage export', () => {
 });
 
 describe('EmployeesPage accessibility', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_FILE_TRANSFERS', 'enabled');
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('has no accessibility problems, with the export menu open', async () => {
@@ -300,5 +310,24 @@ describe('EmployeesPage accessibility', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Export' }));
     await screen.findAllByRole('menuitem');
     await expectNoAccessibilityProblems();
+  });
+});
+
+describe('EmployeesPage export while paused', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('shows export as built but paused, with the reason', async () => {
+    directoryApi();
+    renderApp('/employees');
+    await screen.findByRole('table');
+
+    const button = screen.getByRole('button', { name: 'Export' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleDescription(
+      'Export is built but paused: limited server resources.',
+    );
+    expect(screen.getByText('Export is built but paused: limited server resources.')).toBeVisible();
   });
 });

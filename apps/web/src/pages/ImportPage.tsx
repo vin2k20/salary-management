@@ -1,4 +1,8 @@
-import type { ImportAction, ImportSummary } from '@salary/shared';
+import {
+  FILE_TRANSFERS_PAUSED_MESSAGE,
+  type ImportAction,
+  type ImportSummary,
+} from '@salary/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router';
@@ -8,6 +12,7 @@ import { Button } from '../components/ui/button.tsx';
 import { Input } from '../components/ui/input.tsx';
 import { Label } from '../components/ui/label.tsx';
 import { StatTable } from '../dashboard/StatTable.tsx';
+import { fileTransfersEnabled } from '../features.ts';
 import { commitFile, templateHref, validateFile } from '../imports/api.ts';
 import { changeCount, counted, previewSentence, resultSentence } from '../imports/wording.ts';
 
@@ -125,7 +130,22 @@ function Preview({
  * Import (HLD 6.3): choose an Excel or CSV file, check it and see every problem by row and
  * column, then save it. Nothing is saved unless the whole file is valid.
  */
+/** The Import page, or a note that import is paused on this deployment. */
 export function ImportPage() {
+  if (!fileTransfersEnabled()) {
+    return (
+      <>
+        <h1 className="text-2xl font-semibold">Import</h1>
+        <p className="mt-4 max-w-3xl rounded-lg border p-4 text-sm">
+          {FILE_TRANSFERS_PAUSED_MESSAGE}
+        </p>
+      </>
+    );
+  }
+  return <ImportTool />;
+}
+
+function ImportTool() {
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   // A new input after an import, so the same file can be chosen again.

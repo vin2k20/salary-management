@@ -573,6 +573,18 @@ function byPosition(a: ImportError, b: ImportError): number {
 }
 
 /** Checks every row of the sheets read from a file and plans the changes they make. */
+/** The employee codes a file names on either sheet, as they are stored (upper case), each once. */
+export function fileEmployeeCodes(sheets: readonly SheetRows[]): string[] {
+  const codes = new Set<string>();
+  for (const sheet of sheets) {
+    for (const { cells } of sheet.rows) {
+      const code = textOf(cells.employeeCode)?.toUpperCase();
+      if (code !== undefined) codes.add(code);
+    }
+  }
+  return [...codes];
+}
+
 export function planImport(sheets: readonly SheetRows[], context: ImportContext): ImportResult {
   const errors: ImportError[] = [];
   const employeeSheet = sheets.find((sheet) => sheet.dataset === 'employees');

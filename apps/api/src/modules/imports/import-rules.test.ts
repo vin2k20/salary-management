@@ -1,7 +1,7 @@
 import type { Employee } from '@salary/shared';
 import { describe, expect, it } from 'vitest';
 import type { ImportContext } from './import-rules.ts';
-import { planImport, summarize } from './import-rules.ts';
+import { fileEmployeeCodes, planImport, summarize } from './import-rules.ts';
 import type { RawCell, SheetRows } from './read-spreadsheet.ts';
 
 const BASIC = '00000000-0000-4000-8000-00000000000a';
@@ -477,6 +477,17 @@ describe('planImport: pay', () => {
       ['Employees', 2, 'Last name', 'Enter a last name'],
       ['Pay components', 2, 'Employee code', 'Fix row 2 of the Employees sheet first'],
     ]);
+  });
+});
+
+describe('fileEmployeeCodes', () => {
+  it('lists each employee code in the file once, as stored', () => {
+    const codes = fileEmployeeCodes([
+      employeesSheet(newRow({ employeeCode: ' in-9 ' }), newRow({ employeeCode: null })),
+      paySheet(payRow(), payRow({ employeeCode: 'IN-9' }), payRow({ employeeCode: 'in-1' })),
+    ]);
+
+    expect(codes).toEqual(['IN-9', 'IN-1']);
   });
 });
 

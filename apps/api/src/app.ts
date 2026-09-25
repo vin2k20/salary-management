@@ -1,3 +1,4 @@
+import { FILE_TRANSFERS_PAUSED_MESSAGE, type FileTransferMode } from '@salary/shared';
 import cookieParser from 'cookie-parser';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
@@ -5,6 +6,7 @@ import type { Logger } from 'pino';
 import type { Clock } from './clock.ts';
 import type { Database } from './db/client.ts';
 import type { EmailSender } from './email/email-sender.ts';
+import { HttpError } from './http/errors.ts';
 import { errorHandler, notFoundHandler } from './http/problem-details.ts';
 import { requestLogger } from './http/request-logger.ts';
 import { authRouter, type AuthSettings } from './modules/auth/auth.routes.ts';
@@ -33,6 +35,8 @@ export interface AppDependencies {
   ratesRefreshSecret: string | null;
   /** Trust X-Forwarded-For from the proxies in front of the API (Vercel and Render). */
   trustProxy?: boolean;
+  /** Import and export answer 503 unless enabled (D59). */
+  fileTransfers?: FileTransferMode;
   generateRequestId?: () => string;
 }
 
@@ -46,6 +50,7 @@ export function createApp({
   rateProvider,
   ratesRefreshSecret,
   trustProxy = false,
+  fileTransfers = 'paused',
   generateRequestId,
 }: AppDependencies): Express {
   const app = express();
@@ -72,8 +77,15 @@ export function createApp({
   app.use('/api/reference', referenceRouter({ db }));
   app.use('/api/pay-components', payComponentsRouter({ db, clock }));
   app.use('/api/insights', insightsRouter({ db, clock }));
-  app.use('/api/exports', exportsRouter({ db, clock }));
-  app.use('/api/imports', importsRouter({ db, clock }));
+  if (fileTransfers === 'enabled') {
+    app.use('/api/exports', exportsRouter({ db, clock }));
+    app.use('/api/imports', importsRouter({ db, clock }));
+  } else {
+    // Built and tested, but paused on the free server plan: large files take its whole CPU share.
+    app.use(['/api/exports', '/api/imports'], () => {
+      throw new HttpError(503, FILE_TRANSFERS_PAUSED_MESSAGE);
+    });
+  }
 
   app.use(notFoundHandler());
   app.use(errorHandler());

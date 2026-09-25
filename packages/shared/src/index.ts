@@ -211,12 +211,15 @@ export {
   type SpreadsheetRow,
 } from './spreadsheets.ts';
 export {
+  FILE_TRANSFERS_PAUSED_MESSAGE,
+  FILE_TRANSFER_MODES,
   IMPORT_ACTIONS,
   IMPORT_LIMITS,
   importChangeSchema,
   importErrorSchema,
   importSummarySchema,
   templateQuerySchema,
+  type FileTransferMode,
   type ImportAction,
   type ImportChange,
   type ImportError,

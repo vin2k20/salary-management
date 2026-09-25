@@ -24,6 +24,7 @@ const app = createApp({
   appUrl: config.appUrl,
   rateProvider: createFrankfurterClient(),
   ratesRefreshSecret: config.ratesRefreshSecret,
+  fileTransfers: config.fileTransfers,
 });
 
 const server = app.listen(config.port, (error) => {

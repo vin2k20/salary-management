@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { FILE_TRANSFERS_PAUSED_MESSAGE } from '@salary/shared';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
 import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
@@ -64,8 +65,13 @@ async function chooseAndCheck(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('ImportPage', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_FILE_TRANSFERS', 'enabled');
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('is in the navigation and offers empty templates', async () => {
@@ -200,8 +206,13 @@ describe('ImportPage', () => {
 });
 
 describe('ImportPage accessibility', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_FILE_TRANSFERS', 'enabled');
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('has no accessibility problems with problems or changes shown', async () => {
@@ -216,6 +227,31 @@ describe('ImportPage accessibility', () => {
     importApi(summary);
     await user.click(screen.getByRole('button', { name: 'Check file' }));
     await screen.findByRole('table', { name: 'Changes' });
+    await expectNoAccessibilityProblems();
+  });
+});
+
+describe('ImportPage while import and export are paused', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('says import is built but paused, and offers no file or templates', async () => {
+    const { calls } = importApi(summary);
+    renderApp('/import');
+
+    expect(await screen.findByRole('heading', { name: 'Import' })).toBeInTheDocument();
+    expect(screen.getByText(FILE_TRANSFERS_PAUSED_MESSAGE)).toBeInTheDocument();
+    expect(screen.queryByLabelText('File')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Excel template' })).not.toBeInTheDocument();
+    expect(calls.some((call) => call.path.startsWith('/api/imports'))).toBe(false);
+  });
+
+  it('has no accessibility problems', async () => {
+    importApi(summary);
+    renderApp('/import');
+    await screen.findByText(FILE_TRANSFERS_PAUSED_MESSAGE);
+
     await expectNoAccessibilityProblems();
   });
 });

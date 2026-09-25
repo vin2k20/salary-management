@@ -1,28 +1,43 @@
-import { and, eq, gt, isNull, lte, max, not, or } from 'drizzle-orm';
+import { and, eq, gt, isNull, lte, max, not, or, sql } from 'drizzle-orm';
 import type { Database } from '../../db/client.ts';
 import { employees, payChanges, payComponents, payItems } from '../../db/schema.ts';
 import { scopeCondition, type Scope } from '../auth/scope.ts';
 
 /**
- * Bulk reads for an import. A file can touch every employee in scope, so each read covers the
- * whole scope in one query instead of one query per row.
+ * Bulk reads for an import, limited to the employees the file names: each read covers all of
+ * them in one query instead of one query per row.
  */
 
-export function employeesInScope(db: Database, scope: Scope) {
-  return db.select().from(employees).where(scopeCondition(scope, employees.countryCode));
+/**
+ * Employees with one of the codes. The codes go in as one array parameter, since a file can name
+ * more employees than a query can have parameters.
+ */
+function withCode(codes: readonly string[]) {
+  return sql`${employees.employeeCode} = any(${sql.param(codes)}::text[])`;
+}
+
+export function employeesInScope(db: Database, scope: Scope, codes: readonly string[]) {
+  return db
+    .select()
+    .from(employees)
+    .where(and(scopeCondition(scope, employees.countryCode), withCode(codes)));
 }
 
 /**
- * Codes of employees outside the caller's scope. A new employee cannot take one of them, since
- * codes are unique across all countries; only the codes are read.
+ * Codes of the file that belong to employees outside the caller's scope. A new employee cannot
+ * take one of them, since codes are unique across all countries; only the codes are read.
  */
-export async function codesOutsideScope(db: Database, scope: Scope): Promise<string[]> {
+export async function codesOutsideScope(
+  db: Database,
+  scope: Scope,
+  codes: readonly string[],
+): Promise<string[]> {
   const inScope = scopeCondition(scope, employees.countryCode);
   if (!inScope) return [];
   const rows = await db
     .select({ code: employees.employeeCode })
     .from(employees)
-    .where(not(inScope));
+    .where(and(not(inScope), withCode(codes)));
   return rows.map((row) => row.code);
 }
 
@@ -44,8 +59,13 @@ export function componentsInScope(db: Database, scope: Scope) {
     );
 }
 
-/** Pay items of employees in scope that are in force on a date, or have no end date yet. */
-export function payItemsInScope(db: Database, scope: Scope, date: string) {
+/** Pay items of the employees that are in force on a date, or have no end date yet. */
+export function payItemsInScope(
+  db: Database,
+  scope: Scope,
+  date: string,
+  codes: readonly string[],
+) {
   return db
     .select({
       id: payItems.id,
@@ -62,6 +82,7 @@ export function payItemsInScope(db: Database, scope: Scope, date: string) {
     .where(
       and(
         scopeCondition(scope, employees.countryCode),
+        withCode(codes),
         or(
           isNull(payItems.effectiveTo),
           and(lte(payItems.effectiveFrom, date), gt(payItems.effectiveTo, date)),
@@ -71,11 +92,11 @@ export function payItemsInScope(db: Database, scope: Scope, date: string) {
 }
 
 /** The date of each employee's latest pay change, scheduled ones included. */
-export function latestChangeDates(db: Database, scope: Scope) {
+export function latestChangeDates(db: Database, scope: Scope, codes: readonly string[]) {
   return db
     .select({ employeeId: payChanges.employeeId, date: max(payChanges.effectiveFrom) })
     .from(payChanges)
     .innerJoin(employees, eq(employees.id, payChanges.employeeId))
-    .where(scopeCondition(scope, employees.countryCode))
+    .where(and(scopeCondition(scope, employees.countryCode), withCode(codes)))
     .groupBy(payChanges.employeeId);
 }
