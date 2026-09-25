@@ -5,7 +5,12 @@ import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseQuery } from '../../http/validation.ts';
-import { validateImport, writeTemplate, type UploadedFile } from './imports.service.ts';
+import {
+  commitImport,
+  validateImport,
+  writeTemplate,
+  type UploadedFile,
+} from './imports.service.ts';
 
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const MEGABYTES = String(IMPORT_LIMITS.maxBytes / (1024 * 1024));
@@ -73,6 +78,12 @@ export function importsRouter({ db, clock }: { db: Database; clock: Clock }): Ro
     const { scope } = signedIn(req);
     const file = await receiveFile(req, res);
     res.json(await validateImport(db, scope, file, clock));
+  });
+
+  router.post('/commit', async (req, res) => {
+    const { user, scope } = signedIn(req);
+    const file = await receiveFile(req, res);
+    res.json(await commitImport(db, scope, file, user, clock));
   });
 
   return router;

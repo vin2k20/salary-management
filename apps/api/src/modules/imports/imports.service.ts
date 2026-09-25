@@ -1,15 +1,24 @@
 import type { Writable } from 'node:stream';
 import type {
   CountryCode,
+  CurrentUser,
+  Employee,
   ImportSummary,
   PayFrequencyCode,
   SpreadsheetDataset,
 } from '@salary/shared';
 import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
+import { HttpError } from '../../http/errors.ts';
 import type { Scope } from '../auth/scope.ts';
-import type { PayState } from '../compensation/pay-rules.ts';
-import { toEmployee } from '../employees/employee-record.service.ts';
+import { loadComponents, loadPayState, lockEmployee } from '../compensation/pay.repository.ts';
+import { planPayChange, type PayState } from '../compensation/pay-rules.ts';
+import { savePayPlan, throwIfInvalid } from '../compensation/pay.service.ts';
+import {
+  createEmployee,
+  toEmployee,
+  updateEmployee,
+} from '../employees/employee-record.service.ts';
 import { writeCsvRows, writeXlsxRows } from '../exports/exports.service.ts';
 import { planImport, summarize, type ImportContext, type TodayItem } from './import-rules.ts';
 import {
@@ -105,6 +114,72 @@ export async function validateImport(
   if (read.errors.length > 0) return unreadable(read);
   const context = await loadContext(db, scope, todayFor(clock));
   return summarize(planImport(read.sheets, context));
+}
+
+function problems(count: number): HttpError {
+  const noun = count === 1 ? 'problem' : 'problems';
+  return new HttpError(
+    422,
+    `The file has ${String(count)} ${noun}. Check it again to see the list.`,
+  );
+}
+
+/**
+ * Saves a file in one transaction (D20): it is checked again against the data as it is now, and
+ * nothing is saved unless every row is valid. Employees are added and changed, and pay changes
+ * recorded with the reason "import", through the same services as the forms, so the change log
+ * is written the same way.
+ */
+export async function commitImport(
+  db: Database,
+  scope: Scope,
+  file: UploadedFile,
+  actor: CurrentUser,
+  clock: Clock,
+): Promise<ImportSummary> {
+  const read = await readSpreadsheet(file);
+  if (read.errors.length > 0) throw problems(read.errors.length);
+  return db.transaction(async (tx) => {
+    const result = planImport(read.sheets, await loadContext(tx, scope, todayFor(clock)));
+    if (result.errors.length > 0) throw problems(result.errors.length);
+
+    const created = new Map<string, Employee>();
+    for (const { request } of result.plan.creates) {
+      created.set(request.employeeCode, await createEmployee(tx, scope, request, actor, clock));
+    }
+    for (const { id, update } of result.plan.updates) {
+      await updateEmployee(tx, scope, id, update, actor, clock);
+    }
+    for (const change of result.plan.payChanges) {
+      const id = change.employeeId ?? created.get(change.employeeCode)?.id;
+      const employee = id === undefined ? undefined : await lockEmployee(tx, scope, id);
+      if (!employee) throw new Error(`Employee ${change.employeeCode} was not found`);
+      const state = await loadPayState(tx, scope, employee);
+      const components = await loadComponents(tx, scope, [
+        ...change.set.map((line) => line.componentId),
+        ...state.openItems.map((item) => item.componentId),
+      ]);
+      const plan = throwIfInvalid(
+        planPayChange(
+          state,
+          { effectiveFrom: change.effectiveFrom, set: change.set, end: [] },
+          components,
+        ),
+      );
+      await savePayPlan(tx, {
+        scope,
+        employee,
+        effectiveFrom: change.effectiveFrom,
+        reason: 'import',
+        note: null,
+        plan,
+        openItems: state.openItems,
+        actor,
+        clock,
+      });
+    }
+    return summarize(result);
+  });
 }
 
 /** An empty file to fill in: the same columns as export, with no rows. */
