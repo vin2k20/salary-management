@@ -124,3 +124,59 @@ export function payRangeByCountry(db: Database, filters: Filters, today: string)
     order by country_code`,
   );
 }
+
+export interface JobTitleRow {
+  job_title: string;
+  currency_code: CurrencyCode;
+  headcount: number;
+  minimum_minor: string;
+  maximum_minor: string;
+  sum_minor: string;
+  median_x4: string;
+}
+
+/** Pay per job title for employees with pay; the filters name one country. */
+export function payByJobTitle(db: Database, filters: Filters, today: string) {
+  return rowsOf<JobTitleRow>(
+    db,
+    sql`with ${measured(filters, today)}
+    select
+      job_title,
+      currency_code,
+      count(*)::int as headcount,
+      min(pay_minor)::text as minimum_minor,
+      max(pay_minor)::text as maximum_minor,
+      sum(pay_minor)::text as sum_minor,
+      ${quartileTimesFour('0.5')} as median_x4
+    from measured
+    where pay_minor > 0
+    group by job_title, currency_code
+    order by job_title`,
+  );
+}
+
+export interface DepartmentRow {
+  department: string;
+  currency_code: CurrencyCode;
+  headcount: number;
+  annual_minor: string;
+}
+
+/**
+ * Headcount and annual cost per department and currency; on a view of every country the service
+ * converts each currency's part to US dollars and adds them up.
+ */
+export function costByDepartment(db: Database, filters: Filters, today: string) {
+  return rowsOf<DepartmentRow>(
+    db,
+    sql`with ${measured(filters, today)}
+    select
+      department,
+      currency_code,
+      count(*)::int as headcount,
+      sum(pay_minor)::text as annual_minor
+    from measured
+    group by department, currency_code
+    order by department, currency_code`,
+  );
+}

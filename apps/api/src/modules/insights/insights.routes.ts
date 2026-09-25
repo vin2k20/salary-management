@@ -4,7 +4,7 @@ import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseQuery } from '../../http/validation.ts';
-import { insightsSummary, payRanges } from './insights.service.ts';
+import { departmentCosts, insightsSummary, jobTitlePay, payRanges } from './insights.service.ts';
 
 function signedIn(req: Request) {
   if (!req.auth) throw new HttpError(401, 'Sign in to continue');
@@ -23,6 +23,16 @@ export function insightsRouter({ db, clock }: { db: Database; clock: Clock }): R
   router.get('/pay-range-by-country', async (req, res) => {
     const query = parseQuery(insightsQuerySchema, req.query);
     res.json(await payRanges(db, signedIn(req).scope, query, clock));
+  });
+
+  router.get('/by-job-title', async (req, res) => {
+    const query = parseQuery(insightsQuerySchema, req.query);
+    res.json(await jobTitlePay(db, signedIn(req).scope, query, clock));
+  });
+
+  router.get('/cost-by-department', async (req, res) => {
+    const query = parseQuery(insightsQuerySchema, req.query);
+    res.json(await departmentCosts(db, signedIn(req).scope, query, clock));
   });
 
   return router;

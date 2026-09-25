@@ -8,16 +8,24 @@ import {
   type DisplayCurrency,
   type FxRatesResponse,
   type InsightsQuery,
+  type CostByDepartmentResponse,
   type InsightsSummary,
   type Money,
+  type PayByJobTitleResponse,
   type PayRangeByCountryResponse,
 } from '@salary/shared';
 import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
-import { HttpError } from '../../http/errors.ts';
+import { HttpError, RequestValidationError } from '../../http/errors.ts';
 import type { Scope } from '../auth/scope.ts';
 import { latestRates } from '../fx-rates/fx-rates.service.ts';
-import { costByCountry, payRangeByCountry, type Filters } from './insights.repository.ts';
+import {
+  costByCountry,
+  costByDepartment,
+  payByJobTitle,
+  payRangeByCountry,
+  type Filters,
+} from './insights.repository.ts';
 
 const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
 
@@ -166,5 +174,91 @@ export async function payRanges(
         average: money(row.sum_minor, BigInt(row.headcount)),
       };
     }),
+  };
+}
+
+/**
+ * Pay per job title within one country (F7). A country HR user's country is used when none is
+ * given; global HR users must choose one, since job titles are compared within a country.
+ */
+export async function jobTitlePay(
+  db: Database,
+  scope: Scope,
+  query: InsightsQuery,
+  clock: Clock,
+): Promise<PayByJobTitleResponse> {
+  const country = viewCountry(scope, query.country);
+  if (country === null) {
+    throw new RequestValidationError([
+      { field: 'country', message: 'Choose a country to compare job titles' },
+    ]);
+  }
+  const [rows, rates] = await Promise.all([
+    payByJobTitle(db, { ...filtersFor(scope, query), country }, today(clock)),
+    ratesIf(query.currency === 'USD', db, clock),
+  ]);
+
+  return {
+    measure: query.measure,
+    currency: query.currency,
+    rateDate: rates?.rateDate ?? null,
+    countryCode: country,
+    items: rows.map((row) => {
+      const money = (value: string, divisor = 1n) =>
+        inDisplay(minorFrom(value, divisor), row.currency_code, query.currency, rates);
+      return {
+        jobTitle: row.job_title,
+        headcount: row.headcount,
+        average: money(row.sum_minor, BigInt(row.headcount)),
+        median: money(row.median_x4, 4n),
+        minimum: money(row.minimum_minor),
+        maximum: money(row.maximum_minor),
+      };
+    }),
+  };
+}
+
+/**
+ * Monthly and annual cost per department, largest first. On a view of every country the costs
+ * are added up in US dollars (D28); on a country view they follow the toggle.
+ */
+export async function departmentCosts(
+  db: Database,
+  scope: Scope,
+  query: InsightsQuery,
+  clock: Clock,
+): Promise<CostByDepartmentResponse> {
+  const country = viewCountry(scope, query.country);
+  const costsIn: DisplayCurrency = country === null ? 'USD' : query.currency;
+  const [rows, rates] = await Promise.all([
+    costByDepartment(db, filtersFor(scope, query), today(clock)),
+    ratesIf(costsIn === 'USD', db, clock),
+  ]);
+
+  const departments = new Map<string, { headcount: number; amounts: Money[] }>();
+  for (const row of rows) {
+    const entry = departments.get(row.department) ?? { headcount: 0, amounts: [] };
+    entry.headcount += row.headcount;
+    entry.amounts.push(inDisplay(minorFrom(row.annual_minor), row.currency_code, costsIn, rates));
+    departments.set(row.department, entry);
+  }
+  const currency: CurrencyCode =
+    country !== null && costsIn === 'local' ? COUNTRIES[country].currencyCode : 'USD';
+  const items = [...departments].map(([department, { headcount, amounts }]) => {
+    const annualCost = sumMoney(amounts, currency);
+    return { department, headcount, annualCost, monthlyCost: monthlyOf(annualCost) };
+  });
+  items.sort(
+    (a, b) =>
+      b.annualCost.amountMinor - a.annualCost.amountMinor ||
+      a.department.localeCompare(b.department),
+  );
+
+  return {
+    measure: query.measure,
+    currency: query.currency,
+    rateDate: rates?.rateDate ?? null,
+    countryCode: country,
+    items,
   };
 }
