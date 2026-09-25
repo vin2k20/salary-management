@@ -194,3 +194,19 @@ export {
   type PayRangeByCountryResponse,
 } from './insights.ts';
 export { PEER_COMPARISON, comparePeerPay, type PeerComparison } from './peer-comparison.ts';
+export {
+  EMPLOYEE_COLUMNS,
+  EXPORT_FORMATS,
+  PAY_COLUMNS,
+  SPREADSHEETS,
+  SPREADSHEET_DATASETS,
+  exportQuerySchema,
+  type CellKind,
+  type EmployeeColumnKey,
+  type ExportFormat,
+  type ExportQuery,
+  type PayColumnKey,
+  type SpreadsheetColumn,
+  type SpreadsheetDataset,
+  type SpreadsheetRow,
+} from './spreadsheets.ts';
