@@ -1,10 +1,16 @@
-import { insightsQuerySchema } from '@salary/shared';
+import { insightsQuerySchema, outliersQuerySchema } from '@salary/shared';
 import { Router, type Request } from 'express';
 import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseQuery } from '../../http/validation.ts';
-import { departmentCosts, insightsSummary, jobTitlePay, payRanges } from './insights.service.ts';
+import {
+  departmentCosts,
+  insightsSummary,
+  jobTitlePay,
+  payRanges,
+  peerOutliers,
+} from './insights.service.ts';
 
 function signedIn(req: Request) {
   if (!req.auth) throw new HttpError(401, 'Sign in to continue');
@@ -33,6 +39,11 @@ export function insightsRouter({ db, clock }: { db: Database; clock: Clock }): R
   router.get('/cost-by-department', async (req, res) => {
     const query = parseQuery(insightsQuerySchema, req.query);
     res.json(await departmentCosts(db, signedIn(req).scope, query, clock));
+  });
+
+  router.get('/outliers', async (req, res) => {
+    const query = parseQuery(outliersQuerySchema, req.query);
+    res.json(await peerOutliers(db, signedIn(req).scope, query, clock));
   });
 
   return router;

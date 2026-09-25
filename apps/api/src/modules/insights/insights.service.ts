@@ -1,5 +1,7 @@
 import {
   COUNTRIES,
+  PEER_COMPARISON,
+  comparePeerPay,
   convertMinor,
   divideHalfEven,
   monthlyEquivalentMinor,
@@ -11,6 +13,8 @@ import {
   type CostByDepartmentResponse,
   type InsightsSummary,
   type Money,
+  type OutliersQuery,
+  type OutliersResponse,
   type PayByJobTitleResponse,
   type PayRangeByCountryResponse,
 } from '@salary/shared';
@@ -22,6 +26,7 @@ import { latestRates } from '../fx-rates/fx-rates.service.ts';
 import {
   costByCountry,
   costByDepartment,
+  listOutliers,
   payByJobTitle,
   payRangeByCountry,
   type Filters,
@@ -260,5 +265,52 @@ export async function departmentCosts(
     rateDate: rates?.rateDate ?? null,
     countryCode: country,
     items,
+  };
+}
+
+/**
+ * Employees paid more than 20% above or below the median of their peers (D32), one page at a
+ * time. The difference is worked out on local amounts, so it does not depend on exchange rates.
+ */
+export async function peerOutliers(
+  db: Database,
+  scope: Scope,
+  query: OutliersQuery,
+  clock: Clock,
+): Promise<OutliersResponse> {
+  const [{ rows, total }, rates] = await Promise.all([
+    listOutliers(db, filtersFor(scope, query), query, today(clock)),
+    ratesIf(query.currency === 'USD', db, clock),
+  ]);
+
+  return {
+    measure: query.measure,
+    currency: query.currency,
+    rateDate: rates?.rateDate ?? null,
+    page: query.page,
+    pageSize: query.pageSize,
+    total,
+    limitPercent: PEER_COMPARISON.limitPercent,
+    minimumGroupSize: PEER_COMPARISON.minimumGroupSize,
+    items: rows.map((row) => {
+      const pay = minorFrom(row.pay_minor);
+      const peerMedian = minorFrom(row.peer_median_minor);
+      const { direction, differencePercent } = comparePeerPay(pay, peerMedian);
+      if (direction === null) throw new Error('An outlier must differ from the peer median');
+      return {
+        id: row.id,
+        employeeCode: row.employee_code,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        countryCode: row.country_code,
+        jobTitle: row.job_title,
+        employmentType: row.employment_type,
+        annualPay: inDisplay(pay, row.currency_code, query.currency, rates),
+        peerMedian: inDisplay(peerMedian, row.currency_code, query.currency, rates),
+        peerCount: row.peer_count,
+        differencePercent,
+        direction,
+      };
+    }),
   };
 }
