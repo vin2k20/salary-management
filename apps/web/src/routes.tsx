@@ -2,10 +2,10 @@ import type { RouteObject } from 'react-router';
 import { RequireAuth } from './auth/RequireAuth.tsx';
 import { RequireRole } from './auth/RequireRole.tsx';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage.tsx';
+import { DashboardPage } from './pages/DashboardPage.tsx';
 import { EditEmployeePage } from './pages/EditEmployeePage.tsx';
 import { EmployeePage } from './pages/EmployeePage.tsx';
 import { EmployeesPage } from './pages/EmployeesPage.tsx';
-import { HomePage } from './pages/HomePage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { NewEmployeePage } from './pages/NewEmployeePage.tsx';
 import { NotFoundPage } from './pages/NotFoundPage.tsx';
@@ -20,7 +20,7 @@ export const routes: RouteObject[] = [
   {
     element: <RequireAuth />,
     children: [
-      { index: true, element: <HomePage /> },
+      { index: true, element: <DashboardPage /> },
       { path: 'employees', element: <EmployeesPage /> },
       { path: 'employees/new', element: <NewEmployeePage /> },
       { path: 'employees/:id', element: <EmployeePage /> },

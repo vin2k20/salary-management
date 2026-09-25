@@ -1,5 +1,6 @@
 import { STALE_RATES_AFTER_DAYS } from './fx-rates.ts';
 import { minorDigits, type CurrencyCode } from './money.ts';
+import { divideHalfEven } from './rounding.ts';
 
 /** Units of each currency per US dollar, as exact decimal strings ("95.96"). */
 export type UnitsPerUsd = Partial<Record<CurrencyCode, string>>;
@@ -8,17 +9,6 @@ export type UnitsPerUsd = Partial<Record<CurrencyCode, string>>;
 function parseDecimal(value: string): { units: bigint; scale: bigint } {
   const [whole = '0', fraction = ''] = value.split('.');
   return { units: BigInt(whole + fraction), scale: 10n ** BigInt(fraction.length) };
-}
-
-/** Divides and rounds half to even, with bigint so no precision is lost. */
-function divideHalfEven(numerator: bigint, denominator: bigint): bigint {
-  const negative = numerator < 0n !== denominator < 0n;
-  const n = numerator < 0n ? -numerator : numerator;
-  const d = denominator < 0n ? -denominator : denominator;
-  let quotient = n / d;
-  const twiceRemainder = (n % d) * 2n;
-  if (twiceRemainder > d || (twiceRemainder === d && quotient % 2n === 1n)) quotient += 1n;
-  return negative ? -quotient : quotient;
 }
 
 function rateFor(currency: CurrencyCode, rates: UnitsPerUsd) {

@@ -52,5 +52,3 @@ export const indiaHrUser = {
   role: 'country_hr',
   countryCode: 'IN',
 } as const;
-
-export const healthy = () => Response.json({ status: 'ok', database: 'ok' });

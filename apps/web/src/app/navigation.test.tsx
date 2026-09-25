@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { globalHrUser, healthy, indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
+import { globalHrUser, indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
 import { renderApp } from '../test/render-app.tsx';
 
 describe('protected routes and navigation', () => {
@@ -32,7 +32,6 @@ describe('protected routes and navigation', () => {
   it('shows the Users page to global HR users', async () => {
     mockApi({
       'GET /api/auth/me': () => Response.json({ user: globalHrUser }),
-      'GET /api/health': healthy,
     });
     renderApp('/');
 
@@ -45,7 +44,6 @@ describe('protected routes and navigation', () => {
   it('hides the Users page from country HR users, and shows their country', async () => {
     mockApi({
       'GET /api/auth/me': () => Response.json({ user: indiaHrUser }),
-      'GET /api/health': healthy,
     });
     renderApp('/');
 
@@ -65,7 +63,6 @@ describe('protected routes and navigation', () => {
   it('sends a signed-in user away from the login page', async () => {
     mockApi({
       'GET /api/auth/me': () => Response.json({ user: globalHrUser }),
-      'GET /api/health': healthy,
     });
     const { router } = renderApp('/login');
 

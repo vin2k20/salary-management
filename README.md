@@ -4,7 +4,7 @@
 
 A web application where global and country HR managers maintain pay data for 10,000 employees in India, the USA, Canada and Australia, and see how the organisation pays people on a dashboard.
 
-Status: walking skeleton deployed, features not started.
+Status: in development; progress is tracked in the [implementation plan](docs/implementation-plan.md).
 
 Live app: https://acme-salary-management-vineet.vercel.app (the first request after a quiet period can take about a minute while the free API service wakes up). This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
 
@@ -35,7 +35,7 @@ Full details are in the [high level design](docs/high-level-design.md).
 
 - TypeScript in strict mode, in one repository with npm workspaces:
   - `apps/api`: Express 5 API with Helmet, pino logging and Zod
-  - `apps/web`: React app built with Vite, with TanStack Query for server data
+  - `apps/web`: React app built with Vite, with TanStack Query for server data and Recharts for charts
   - `packages/shared`: Zod schemas, types and rules shared by the API and the web app
 - Node.js 24, ESLint and Prettier, Vitest with Supertest and React Testing Library.
 
@@ -188,6 +188,19 @@ The Pay components page lists the parts that make up pay (such as Basic, HRA, Bo
 - Global HR users manage every component; country HR users manage their own country's components and see the all-country ones.
 
 The API endpoints are `GET` and `POST /api/pay-components` and `PATCH /api/pay-components/:id`. Every change is written to the change log.
+
+## Dashboard
+
+The dashboard is the first page after signing in. It shows how the organisation pays people, within the user's scope:
+
+- **Filters** in one row: the country (global HR users; country HR users always see their own), the measure (total cost, or gross pay without employer contributions and benefits) and whether to include inactive employees. The choices are kept in the URL.
+- **Summary:** headcount with annual and monthly cost. On the all-countries view these totals are always in US dollars, and a table gives each country's cost, which follows the currency toggle.
+- **Pay range per country:** a box plot (lowest, lower quartile, median, upper quartile, highest) with a table of the same figures and the average. Countries in different currencies each get their own scale; in US dollars they share one.
+- **Cost by department:** annual cost as bars, largest first, with monthly and annual cost in a table.
+- **Pay by job title:** headcount, average, median, lowest and highest pay for each job title within one country. On the all-countries view the section has its own country choice.
+- **Pay compared with peers:** employees paid more than 20% above or below the median of their peers (same country, job title and employment type, in groups of at least five), largest difference first, 25 at a time, with a filter for above or below.
+
+Employees without current pay count in the headcount but not in pay figures. Every statistic is worked out in the database; amounts are exact to the minor unit, rounded once, half to even. The API endpoints are `GET /api/insights/summary`, `/pay-range-by-country`, `/cost-by-department`, `/by-job-title` and `/outliers`, each with `country`, `measure`, `currency` and `includeInactive`.
 
 ## Exchange rates and currency
 

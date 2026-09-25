@@ -86,6 +86,7 @@ export {
   type FxRefreshResponse,
 } from './fx-rates.ts';
 export { convertMinor, isStale, rateOnOrBefore, type UnitsPerUsd } from './currency-conversion.ts';
+export { divideHalfEven } from './rounding.ts';
 export {
   EMPLOYEE_SORT_FIELDS,
   countryName,
@@ -164,3 +165,32 @@ export {
   type TransferRequest,
   type UpdatePayComponentRequest,
 } from './pay.ts';
+export {
+  OUTLIER_DIRECTIONS,
+  PAY_MEASURES,
+  costByDepartmentResponseSchema,
+  departmentCostSchema,
+  insightsQuerySchema,
+  insightsSummarySchema,
+  jobTitlePaySchema,
+  outlierSchema,
+  outliersQuerySchema,
+  outliersResponseSchema,
+  payByJobTitleResponseSchema,
+  payRangeByCountryResponseSchema,
+  payRangeSchema,
+  type CostByDepartmentResponse,
+  type DepartmentCost,
+  type InsightsQuery,
+  type InsightsSummary,
+  type JobTitlePay,
+  type Outlier,
+  type OutlierDirection,
+  type OutliersQuery,
+  type OutliersResponse,
+  type PayByJobTitleResponse,
+  type PayMeasure,
+  type PayRange,
+  type PayRangeByCountryResponse,
+} from './insights.ts';
+export { PEER_COMPARISON, comparePeerPay, type PeerComparison } from './peer-comparison.ts';

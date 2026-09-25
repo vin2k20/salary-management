@@ -159,7 +159,7 @@ Conventions:
 | `POST /api/employees/:id/pay-changes` | Record a pay change for one or more components | Scoped |
 | `GET /api/pay-components` | Component catalogue and frequencies | Scoped |
 | `POST /api/pay-components` | Add a component | Scoped |
-| `PATCH /api/pay-components/:id` | Rename or deactivate a component | Scoped |
+| `PATCH /api/pay-components/:id` | Rename, deactivate or reactivate a component | Scoped |
 | `GET /api/insights/summary` | Headcount, monthly and annual cost; org-wide totals in USD | Scoped |
 | `GET /api/insights/pay-range-by-country` | Minimum, quartiles, median, maximum and average per country | Scoped |
 | `GET /api/insights/by-job-title?country=` | Headcount, average, median and range per job title | Scoped |
