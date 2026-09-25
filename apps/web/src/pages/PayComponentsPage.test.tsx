@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
 import { frequencies } from '../test/pay-data.ts';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
 import { chooseOption } from '../test/select.ts';
 
@@ -204,5 +205,22 @@ describe('PayComponentsPage', () => {
       { isActive: false },
       { isActive: true },
     ]);
+  });
+});
+
+describe('PayComponentsPage accessibility', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no accessibility problems, with the add form open', async () => {
+    const user = userEvent.setup();
+    componentsApi();
+    renderApp('/pay-components');
+    await row(/^Stipend/);
+    await expectNoAccessibilityProblems();
+
+    await user.click(screen.getByRole('button', { name: 'Add component' }));
+    await expectNoAccessibilityProblems();
   });
 });

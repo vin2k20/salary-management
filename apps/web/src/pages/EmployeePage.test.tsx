@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, mockApi, problem } from '../test/mock-api.ts';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
 
 const maria = {
@@ -249,5 +250,19 @@ describe('EmployeePage', () => {
     await user.click(await screen.findByRole('link', { name: 'Maria Lopez' }));
 
     expect(await screen.findByRole('heading', { name: 'Maria Lopez' })).toBeInTheDocument();
+  });
+});
+
+describe('EmployeePage accessibility', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no accessibility problems', async () => {
+    employeeApi();
+    renderApp(`/employees/${maria.id}`);
+    await screen.findByRole('heading', { name: 'Maria Lopez' });
+
+    await expectNoAccessibilityProblems();
   });
 });

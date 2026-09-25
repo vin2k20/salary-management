@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
 
 const summary = {
@@ -195,5 +196,26 @@ describe('ImportPage', () => {
     await user.upload(screen.getByLabelText('File'), file());
 
     expect(screen.queryByRole('table', { name: 'Changes' })).not.toBeInTheDocument();
+  });
+});
+
+describe('ImportPage accessibility', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no accessibility problems with problems or changes shown', async () => {
+    const user = userEvent.setup();
+    importApi(invalid);
+    renderApp('/import');
+    await chooseAndCheck(user);
+    await screen.findByRole('table', { name: 'Problems' });
+    await expectNoAccessibilityProblems();
+
+    vi.unstubAllGlobals();
+    importApi(summary);
+    await user.click(screen.getByRole('button', { name: 'Check file' }));
+    await screen.findByRole('table', { name: 'Changes' });
+    await expectNoAccessibilityProblems();
   });
 });

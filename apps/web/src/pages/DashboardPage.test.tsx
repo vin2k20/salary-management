@@ -3,6 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, indiaHrUser, mockApi } from '../test/mock-api.ts';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
 import { chooseOption } from '../test/select.ts';
 
@@ -385,5 +386,21 @@ describe('DashboardPage', () => {
     expect(screen.queryByRole('combobox', { name: 'Country' })).not.toBeInTheDocument();
     await within(section('Pay by job title')).findByRole('row', { name: /^Account Executive/ });
     expect(queriesTo(calls, '/api/insights/by-job-title').at(-1)).not.toContain('country=');
+  });
+});
+
+describe('DashboardPage accessibility', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no accessibility problems with every section shown', async () => {
+    dashboardApi();
+    renderApp('/');
+    const peers = await screen.findByRole('region', { name: 'Pay compared with peers' });
+    await within(peers).findByRole('row', { name: /Sharma/ });
+    await within(section('Pay by job title')).findByRole('row', { name: /^Account Executive/ });
+
+    await expectNoAccessibilityProblems();
   });
 });
