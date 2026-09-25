@@ -10,7 +10,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env src/scripts/migrate.ts",
-    "db:seed": "node --env-file-if-exists=.env src/scripts/seed.ts"
+    "db:seed": "node --env-file-if-exists=.env src/scripts/seed.ts",
+    "time-endpoints": "node src/scripts/time-endpoints.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
