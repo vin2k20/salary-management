@@ -31,3 +31,43 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  e2e:
+    name: End-to-end smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      # A throwaway database for this job only; the smoke test migrates and seeds it.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: salary_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/salary_e2e
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx -w @salary/e2e playwright install --with-deps chromium
+      - run: npm run e2e
+      - name: Upload the report and trace
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14
