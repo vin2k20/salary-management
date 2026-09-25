@@ -11,5 +11,6 @@ export const NAVIGATION: NavigationItem[] = [
   { to: '/', label: 'Dashboard' },
   { to: '/employees', label: 'Employees' },
   { to: '/pay-components', label: 'Pay components' },
+  { to: '/import', label: 'Import' },
   { to: '/users', label: 'Users', roles: ['global_hr'] },
 ];

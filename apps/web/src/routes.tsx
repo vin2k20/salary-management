@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage.tsx';
 import { EditEmployeePage } from './pages/EditEmployeePage.tsx';
 import { EmployeePage } from './pages/EmployeePage.tsx';
 import { EmployeesPage } from './pages/EmployeesPage.tsx';
+import { ImportPage } from './pages/ImportPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { NewEmployeePage } from './pages/NewEmployeePage.tsx';
 import { NotFoundPage } from './pages/NotFoundPage.tsx';
@@ -26,6 +27,7 @@ export const routes: RouteObject[] = [
       { path: 'employees/:id', element: <EmployeePage /> },
       { path: 'employees/:id/edit', element: <EditEmployeePage /> },
       { path: 'pay-components', element: <PayComponentsPage /> },
+      { path: 'import', element: <ImportPage /> },
       {
         path: 'users',
         element: (
