@@ -5,6 +5,7 @@ import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseQuery } from '../../http/validation.ts';
+import { fileRateLimit } from '../auth/rate-limits.ts';
 import {
   commitImport,
   validateImport,
@@ -60,6 +61,7 @@ function signedIn(req: Request) {
  */
 export function importsRouter({ db, clock }: { db: Database; clock: Clock }): Router {
   const router = Router();
+  router.use(fileRateLimit('imports'));
 
   router.get('/template', async (req, res) => {
     signedIn(req);

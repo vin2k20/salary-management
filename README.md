@@ -236,6 +236,15 @@ The API endpoints are `GET /api/imports/template`, `POST /api/imports/validate` 
 - **Links:** each link carries a random single-use token; only its SHA-256 hash is stored. Reset links last 30 minutes and invite links 72 hours, and a new link replaces an older unused one. Setting a password ends every older session for that user and is recorded in the change log.
 - **Email:** Brevo sends the emails in production. Locally, `EMAIL_TRANSPORT=console` writes them to the API log, so you can open a link without an email account.
 
+## Security and accessibility
+
+- Every signed-in route is checked in tests for both roles; a country HR user never reaches another country's records.
+- The web app sends a content security policy and other security headers (`vercel.json`); the API uses Helmet.
+- Sign-in, password reset, import and export are rate limited; logs hold no pay amounts, passwords or query values.
+- Key pages are checked with axe-core in the tests, and by hand for keyboard use, contrast and screen reader structure.
+
+Results and details: [security and accessibility checklist](docs/quality-checklist.md).
+
 ## Tests
 
 Each workspace uses Vitest, with test files next to the code they test (`*.test.ts`). Run all tests with `npm test`, or one workspace with `npm test -w @salary/api`. API and database tests run against PGlite, PostgreSQL in memory: each test file gets a fresh database with every migration applied, so tests need no running database or network. UI tests use React Testing Library, and a Playwright smoke test comes later.
@@ -279,6 +288,7 @@ To be completed in steps 21 and 22.
 | [High level design](docs/high-level-design.md) | Architecture, data model, API, flows, security, testing and deployment |
 | [Design approach and trade-offs](docs/design-approach-and-trade-offs.md) | The reasoning behind the design and the options considered |
 | [Implementation plan](docs/implementation-plan.md) | Step by step build plan and progress tracker |
+| [Security and accessibility checklist](docs/quality-checklist.md) | What was checked before release, how, and the results |
 | [Research: payroll in India](docs/research-india-payroll.md) | How salary and payroll are managed in India |
 | [Research: pay structures by country](docs/research-country-pay-structures.md) | Employee fields and pay components for the four countries |
 | [Project history](docs/ai/log.md) | One line per completed step |

@@ -4,6 +4,7 @@ import type { Clock } from '../../clock.ts';
 import type { Database } from '../../db/client.ts';
 import { HttpError } from '../../http/errors.ts';
 import { parseQuery } from '../../http/validation.ts';
+import { fileRateLimit } from '../auth/rate-limits.ts';
 import { writeCsv, writeXlsx } from './exports.service.ts';
 
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -14,6 +15,7 @@ const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.s
  */
 export function exportsRouter({ db, clock }: { db: Database; clock: Clock }): Router {
   const router = Router();
+  router.use(fileRateLimit('exports'));
 
   router.get('/', async (req, res) => {
     if (!req.auth) throw new HttpError(401, 'Sign in to continue');

@@ -31,29 +31,40 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
     },
   });
 
+  const navigation = (
+    <nav aria-label="Main" className="-mx-1 flex w-full gap-1 overflow-x-auto px-1 pb-2">
+      {items.map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.to === '/'}
+          className={({ isActive }) =>
+            cn(
+              'rounded-md px-3 py-1.5 text-sm whitespace-nowrap text-muted-foreground hover:text-foreground',
+              isActive && 'bg-secondary text-foreground',
+            )
+          }
+        >
+          {item.label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+
   return (
     <div className="min-h-screen">
+      <a
+        href="#main"
+        className="sr-only rounded-md bg-background px-3 py-2 text-sm focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
+      >
+        Skip to main content
+      </a>
       <header className="border-b">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-8 px-6">
-          <span className="font-semibold">ACME Salary Management</span>
-          <nav aria-label="Main" className="flex gap-1">
-            {items.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/'}
-                className={({ isActive }) =>
-                  cn(
-                    'rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground',
-                    isActive && 'bg-secondary text-foreground',
-                  )
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-4">
+        {/* Title and account controls on the first row, the navigation on its own row below,
+            in the same order for the keyboard as on screen. */}
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-2 px-4 pt-3 sm:px-6">
+          <span className="font-semibold whitespace-nowrap">ACME Salary Management</span>
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
             <CurrencyToggle />
             <div className="text-right text-sm leading-tight">
               <div className="font-medium">{user.name}</div>
@@ -70,9 +81,12 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
               Sign out
             </Button>
           </div>
+          {navigation}
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 outline-none sm:px-6">
+        {children}
+      </main>
     </div>
   );
 }

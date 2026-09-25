@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
 import { components, frequencies, ids, payTotals } from '../test/pay-data.ts';
 import { chooseOption } from '../test/select.ts';
@@ -314,5 +315,23 @@ describe('editing an employee', () => {
 
     expect(router.state.location.pathname).toBe(`/employees/${priya.id}`);
     expect(calls.filter((call) => call.method === 'PATCH')).toEqual([]);
+  });
+});
+
+describe('employee form accessibility', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no accessibility problems, with or without errors shown', async () => {
+    const user = userEvent.setup();
+    formApi();
+    renderApp('/employees/new');
+    const save = await screen.findByRole('button', { name: 'Add employee' });
+    await expectNoAccessibilityProblems();
+
+    await user.click(save);
+    await screen.findByText('Enter a first name');
+    await expectNoAccessibilityProblems();
   });
 });

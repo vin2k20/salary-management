@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, mockApi, problem } from '../test/mock-api.ts';
 import { renderApp } from '../test/render-app.tsx';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 
 const signedOut = () => problem(401, 'Sign in to continue');
 
@@ -82,5 +83,16 @@ describe('LoginPage', () => {
       email: 'global.hr@acme.example.com',
       password: 'correct horse battery staple',
     });
+  });
+
+  it('has no accessibility problems, with or without errors shown', async () => {
+    mockApi({ 'GET /api/auth/me': signedOut });
+    renderApp('/login');
+    await screen.findByRole('button', { name: 'Sign in' });
+    await expectNoAccessibilityProblems();
+
+    await fillIn('', '');
+    await screen.findByText('Enter your email address');
+    await expectNoAccessibilityProblems();
   });
 });

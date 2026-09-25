@@ -12,6 +12,7 @@ import {
   payTotals,
   priya,
 } from '../test/pay-data.ts';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
 import { chooseOption } from '../test/select.ts';
 
@@ -272,5 +273,22 @@ describe('moving an employee to another country', () => {
       effectiveFrom: '2026-09-20',
       items: [{ componentId: ids.usBase, amount: '4000', currency: 'USD', frequency: 'bi_weekly' }],
     });
+  });
+});
+
+describe('pay dialogs accessibility', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no accessibility problems with the pay change dialog open', async () => {
+    const user = userEvent.setup();
+    payApi();
+    renderApp(`/employees/${ids.priya}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Record pay change' }));
+    screen.getByRole('dialog', { name: 'Record pay change' });
+
+    await expectNoAccessibilityProblems();
   });
 });

@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, indiaHrUser, mockApi } from '../test/mock-api.ts';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
 import { chooseOption } from '../test/select.ts';
 
@@ -282,5 +283,22 @@ describe('EmployeesPage export', () => {
       'href',
       '/api/exports?format=csv&dataset=employees',
     );
+  });
+});
+
+describe('EmployeesPage accessibility', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no accessibility problems, with the export menu open', async () => {
+    directoryApi();
+    renderApp('/employees');
+    await screen.findByRole('table');
+    await expectNoAccessibilityProblems();
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export' }));
+    await screen.findAllByRole('menuitem');
+    await expectNoAccessibilityProblems();
   });
 });

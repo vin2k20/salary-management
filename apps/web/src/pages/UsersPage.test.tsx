@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalHrUser, mockApi, problem } from '../test/mock-api.ts';
+import { expectNoAccessibilityProblems } from '../test/axe.ts';
 import { renderApp } from '../test/render-app.tsx';
 import { chooseOption } from '../test/select.ts';
 
@@ -241,5 +242,20 @@ describe('UsersPage', () => {
       role: 'country_hr',
       countryCode: 'CA',
     });
+  });
+});
+
+describe('UsersPage accessibility', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no accessibility problems, with the add form open', async () => {
+    const user = userEvent.setup();
+    usersApi();
+    renderApp('/users');
+    await user.click(await screen.findByRole('button', { name: 'Add user' }));
+
+    await expectNoAccessibilityProblems();
   });
 });
