@@ -37,7 +37,8 @@ Full details are in the [high level design](docs/high-level-design.md).
   - `apps/api`: Express 5 API with Helmet, pino logging and Zod
   - `apps/web`: React app built with Vite, with TanStack Query for server data and Recharts for charts
   - `packages/shared`: Zod schemas, types and rules shared by the API and the web app
-- Node.js 24, ESLint and Prettier, Vitest with Supertest and React Testing Library.
+  - `e2e`: the Playwright smoke test
+- Node.js 24, ESLint and Prettier, Vitest with Supertest and React Testing Library, Playwright.
 
 Choices and reasons are in the [decisions log](docs/decisions-and-questions.md).
 
@@ -67,6 +68,7 @@ npm run dev
 | `npm test` | Run the tests in every workspace |
 | `npm run build` | Build the web app for production (the API runs from source) |
 | `npm run dev` | Start the API and the web app in watch mode |
+| `npm run e2e` | Run the end-to-end smoke test (see [Tests](#tests)) |
 
 ### Environment variables
 
@@ -247,9 +249,24 @@ Results and details: [security and accessibility checklist](docs/quality-checkli
 
 ## Tests
 
-Each workspace uses Vitest, with test files next to the code they test (`*.test.ts`). Run all tests with `npm test`, or one workspace with `npm test -w @salary/api`. API and database tests run against PGlite, PostgreSQL in memory: each test file gets a fresh database with every migration applied, so tests need no running database or network. UI tests use React Testing Library, and a Playwright smoke test comes later.
+Each workspace uses Vitest, with test files next to the code they test (`*.test.ts`). Run all tests with `npm test`, or one workspace with `npm test -w @salary/api`. API and database tests run against PGlite, PostgreSQL in memory: each test file gets a fresh database with every migration applied, so tests need no running database or network. UI tests use React Testing Library.
 
-GitHub Actions runs lint, the format check, the type check, all tests and the build on every push and on every pull request to `main` (`.github/workflows/ci.yml`).
+### End-to-end smoke test
+
+One Playwright test (`e2e/tests/smoke.spec.ts`) runs the main path in a real browser: India's HR user signs in, searches the directory for an employee, records a raise, checks that the dashboard's annual cost goes up by the raise over a year, and switches the dashboard to US dollars.
+
+Each run migrates a throwaway PostgreSQL database (version 15 or later), loads 200 seeded employees, and starts the API on port 3100 and the production build of the web app on port 4173, so it does not clash with `npm run dev`. The HR password and session secret are made up for each run.
+
+```bash
+npx -w @salary/e2e playwright install chromium
+E2E_DATABASE_URL=postgresql://postgres@localhost:5432/salary_e2e npm run e2e
+```
+
+The first command downloads the browser once. `E2E_DATABASE_URL` must point at a database on localhost, and its data is replaced on every run. The report, with a trace of every step, is written to `e2e/playwright-report/`; open it with `npx -w @salary/e2e playwright show-report`.
+
+### Continuous integration
+
+GitHub Actions runs lint, the format check, the type check, all tests and the build on every push and on every pull request to `main` (`.github/workflows/ci.yml`). A second job runs the smoke test against a PostgreSQL 17 service container and keeps the report as a build artifact for 14 days.
 
 ## Deployment
 

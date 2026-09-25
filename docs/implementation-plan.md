@@ -753,7 +753,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 15 | Done | [#17](https://github.com/vin2k20/salary-management/pull/17) | 25 Sep 2026 | Dashboard details (D54); statistics in SQL with exact rounding |
 | 16 | Done | [#18](https://github.com/vin2k20/salary-management/pull/18) | 25 Sep 2026 | Export details (D55); current pay only, formula-safe CSV |
 | 17 | Done | [#19](https://github.com/vin2k20/salary-management/pull/19) | 25 Sep 2026 | Import details (D56); Excel files up to 1 MB and 20,000 rows |
-| 18 | Not started | | | |
+| 18 | Done | [#20](https://github.com/vin2k20/salary-management/pull/20) | 25 Sep 2026 | Security and quality pass (D57); results in `quality-checklist.md` |
 | 19 | Not started | | | |
 | 20 | Not started | | | |
 | 21 | Not started | | | |

@@ -101,6 +101,7 @@ salary-management/
     web/          React app: routes, screens, components, API client
   packages/
     shared/       Zod schemas, shared types and shared rules
+  e2e/            Playwright smoke test
   docs/           requirements, decisions, design, diagrams, project history
   .github/        CI workflow and the daily exchange rates workflow
 ```
