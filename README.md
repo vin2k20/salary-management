@@ -211,6 +211,18 @@ The Employees page has an **Export** menu that downloads the employees matching 
 
 The columns are the ones import will read: employee details with country fields, and one row per employee and component of current pay (component code, amount per period, currency, frequency and effective date). Scheduled pay changes are not included. In Excel, amounts are numbers with two decimals; text that starts like a formula is escaped in CSV files. The API endpoint is `GET /api/exports?format=xlsx|csv&dataset=employees|pay` with the directory filters; the file is streamed while rows are read in batches.
 
+## Import
+
+The Import page adds and updates employees and their current pay from a file with the export columns:
+
+- **Templates:** an empty Excel file with both sheets, or a CSV file for employees or for pay components. An export from the Employees page has the same columns with your data.
+- **Check first:** the file is checked row by row with the same rules as the forms, and every problem is listed by sheet, row and column. A valid file shows the employees it adds and updates and the pay changes it makes.
+- **All or nothing:** importing checks the file again and saves it in one transaction, only when every row is valid. Every change is written to the change log, and pay changes have the reason "import".
+- **Matching:** employees by employee code and components by component code in the employee's country. Employee codes and countries do not change in an import. A pay row that matches today's pay is left as it is; changed rows for one employee need one effective date. Components left out of a file are not ended.
+- **Limits:** files up to 10 MB and 100,000 rows; Excel files up to 1 MB (about 20,000 rows), since they are read whole into memory. Country HR users can only import their own country.
+
+The API endpoints are `GET /api/imports/template`, `POST /api/imports/validate` and `POST /api/imports/commit`; uploads are multipart with the file in the `file` field.
+
 ## Exchange rates and currency
 
 - **Rates:** US dollar reference rates for CAD, AUD and INR come from the [Frankfurter API](https://frankfurter.dev) (central bank rates, no key). One row per currency and date is kept, so history is never overwritten; repeated refreshes for a date change nothing.
