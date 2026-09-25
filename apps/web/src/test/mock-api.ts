@@ -4,18 +4,33 @@ type Handler = (request: { body: unknown; query: URLSearchParams }) => Response 
 
 /**
  * Replaces fetch with handlers keyed by "METHOD /path", matched without the query string. Unknown
- * requests get a 404, and every call is recorded with its query so tests can check what was sent.
+ * requests get a 404, and every call is recorded with its query, body and headers so tests can
+ * check what was sent.
  */
 export function mockApi(handlers: Record<string, Handler>) {
-  const calls: { method: string; path: string; query: string; body: unknown }[] = [];
+  const calls: {
+    method: string;
+    path: string;
+    query: string;
+    body: unknown;
+    headers: Headers;
+  }[] = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(
       typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
       'http://localhost',
     );
     const method = (init?.method ?? 'GET').toUpperCase();
-    const body: unknown = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
-    calls.push({ method, path: url.pathname, query: url.search, body });
+    // JSON bodies are parsed; uploads keep their form data.
+    let body: unknown = init?.body instanceof FormData ? init.body : undefined;
+    if (typeof init?.body === 'string') body = JSON.parse(init.body);
+    calls.push({
+      method,
+      path: url.pathname,
+      query: url.search,
+      body,
+      headers: new Headers(init?.headers),
+    });
     const handler = handlers[`${method} ${url.pathname}`];
     return handler
       ? handler({ body, query: url.searchParams })

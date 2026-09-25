@@ -226,7 +226,7 @@ Import and export design:
 | Logout, reset and deactivation | Logout clears the cookie. A password reset or deactivation raises the user's token version, which makes older tokens invalid. |
 | Reset and invite tokens | 32 random bytes, stored only as a SHA-256 hash, single use. Reset links last 30 minutes, invite links 72 hours. The forgot password response is the same whether or not the email exists. |
 | Internal endpoint | The scheduled rates refresh needs a long random secret in a header, compared in constant time. The secret is kept in GitHub and Render settings. |
-| Cross-site requests | Same-origin API, SameSite=Lax cookies, and JSON-only request bodies for changes. |
+| Cross-site requests | Same-origin API, SameSite=Lax cookies, and JSON-only request bodies for changes. File uploads, which are multipart, must also carry an `X-Requested-With` header that a cross-site form cannot send. |
 | Brute force | Rate limits on login and forgot password, per IP address and per email. |
 | Input | Zod validation on every request. Parameterised SQL through Drizzle. Upload size and type limits. |
 | Spreadsheet export | In CSV files, text that starts with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading apostrophe. Excel files write text as typed text cells, which Excel never runs as formulas. So exported files cannot run formulas when opened. |

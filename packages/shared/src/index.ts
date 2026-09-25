@@ -210,3 +210,16 @@ export {
   type SpreadsheetDataset,
   type SpreadsheetRow,
 } from './spreadsheets.ts';
+export {
+  IMPORT_ACTIONS,
+  IMPORT_LIMITS,
+  importChangeSchema,
+  importErrorSchema,
+  importSummarySchema,
+  templateQuerySchema,
+  type ImportAction,
+  type ImportChange,
+  type ImportError,
+  type ImportSummary,
+  type TemplateQuery,
+} from './imports.ts';

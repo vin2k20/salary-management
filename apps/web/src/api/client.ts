@@ -78,3 +78,25 @@ async function problemDetail(response: Response): Promise<string> {
   }
   return 'Something went wrong. Try again.';
 }
+
+/**
+ * Sends a file as a multipart upload and checks the JSON response against a shared schema. The
+ * X-Requested-With header, which a cross-site form cannot send, marks it as coming from the app.
+ */
+export async function apiUpload<T extends z.ZodType>(
+  path: string,
+  file: File,
+  schema: T,
+): Promise<z.output<T>> {
+  const body = new FormData();
+  body.append('file', file);
+  const response = await fetch(path, {
+    method: 'POST',
+    body,
+    headers: { Accept: 'application/json', 'X-Requested-With': 'fetch' },
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, await problemDetail(response));
+  }
+  return schema.parse(await response.json());
+}
