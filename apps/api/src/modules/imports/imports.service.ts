@@ -20,7 +20,13 @@ import {
   updateEmployee,
 } from '../employees/employee-record.service.ts';
 import { writeCsvRows, writeXlsxRows } from '../exports/exports.service.ts';
-import { planImport, summarize, type ImportContext, type TodayItem } from './import-rules.ts';
+import {
+  fileEmployeeCodes,
+  planImport,
+  summarize,
+  type ImportContext,
+  type TodayItem,
+} from './import-rules.ts';
 import {
   codesOutsideScope,
   componentsInScope,
@@ -39,18 +45,22 @@ export function todayFor(clock: Clock): string {
   return clock.now().toISOString().slice(0, 10);
 }
 
-/** Everything the import rules need about the caller's scope, read in a few bulk queries. */
+/**
+ * Everything the import rules need about the employees a file names (by code) and the caller's
+ * scope, read in a few bulk queries.
+ */
 export async function loadContext(
   db: Database,
   scope: Scope,
   today: string,
+  codes: readonly string[],
 ): Promise<ImportContext> {
   // One after another: inside the commit transaction they share a single connection.
-  const rows = await employeesInScope(db, scope);
-  const outside = await codesOutsideScope(db, scope);
+  const rows = await employeesInScope(db, scope, codes);
+  const outside = await codesOutsideScope(db, scope, codes);
   const components = await componentsInScope(db, scope);
-  const items = await payItemsInScope(db, scope, today);
-  const latest = await latestChangeDates(db, scope);
+  const items = await payItemsInScope(db, scope, today, codes);
+  const latest = await latestChangeDates(db, scope, codes);
   const latestById = new Map(latest.map((row) => [row.employeeId, row.date]));
   const payToday = new Map<string, Map<string, TodayItem>>();
   const payStates = new Map<string, PayState>();
@@ -112,7 +122,7 @@ export async function validateImport(
 ): Promise<ImportSummary> {
   const read = await readSpreadsheet(file);
   if (read.errors.length > 0) return unreadable(read);
-  const context = await loadContext(db, scope, todayFor(clock));
+  const context = await loadContext(db, scope, todayFor(clock), fileEmployeeCodes(read.sheets));
   return summarize(planImport(read.sheets, context));
 }
 
@@ -140,7 +150,8 @@ export async function commitImport(
   const read = await readSpreadsheet(file);
   if (read.errors.length > 0) throw problems(read.errors.length);
   return db.transaction(async (tx) => {
-    const result = planImport(read.sheets, await loadContext(tx, scope, todayFor(clock)));
+    const codes = fileEmployeeCodes(read.sheets);
+    const result = planImport(read.sheets, await loadContext(tx, scope, todayFor(clock), codes));
     if (result.errors.length > 0) throw problems(result.errors.length);
 
     const created = new Map<string, Employee>();
