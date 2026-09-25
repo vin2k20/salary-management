@@ -750,7 +750,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 12 | Done | [#14](https://github.com/vin2k20/salary-management/pull/14) | 24 Sep 2026 | Employee record details (D51); job title suggestions and scoped spelling checks |
 | 13 | Done | [#15](https://github.com/vin2k20/salary-management/pull/15) | 24 Sep 2026 | Pay change details (D52); read-only component list, totals on the employee endpoint, US dollars converted in the browser |
 | 14 | Done | [#16](https://github.com/vin2k20/salary-management/pull/16) | 25 Sep 2026 | Pay component rules (D53); codes unique among the components each country can use |
-| 15 | Not started | | | |
+| 15 | Done | [#17](https://github.com/vin2k20/salary-management/pull/17) | 25 Sep 2026 | Dashboard details (D54); statistics in SQL with exact rounding |
 | 16 | Not started | | | |
 | 17 | Not started | | | |
 | 18 | Not started | | | |
