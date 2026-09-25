@@ -61,6 +61,7 @@ Run from the repository root. Node.js 24 is required (`.nvmrc`).
 - `npm run dev`: start the API (port 3000) and the web app (port 5173) in watch mode.
 - `npm run e2e`: the Playwright smoke test. Set `E2E_DATABASE_URL` to a throwaway local PostgreSQL 15+ database, which each run resets; run `npx -w @salary/e2e playwright install chromium` once first. Not part of `npm run check`.
 - `npm run build`: build the web app. The API runs from its TypeScript source and has no build.
+- `npm run time-endpoints -w @salary/api -- --url <address> --email <user>`: time the main read endpoints as an HR user (password from `TIME_PASSWORD` or a prompt); add `--files` for import and export when they are enabled. Results go in `docs/performance.md`.
 - `npm run db:migrate -w @salary/api`: apply migrations to the database in `apps/api/.env`.
 - `npm run db:seed -w @salary/api`: load the 10,000-employee seed data and the demo HR users; add `-- --reset` to replace existing data, or `-- --users-only` for the users alone.
 - `npm run db:generate -w @salary/api`: write a migration after changing `apps/api/src/db/schema.ts`. Custom SQL (views, functions, reference data) uses `npx drizzle-kit generate --custom --name=<name>` in `apps/api`.

@@ -207,6 +207,7 @@ Import and export design:
 - **All or nothing.** A file is saved in one transaction only when every row is valid.
 - **Matching.** Employees are matched by employee code and components by component code. Pay rows create a pay change with the reason "import".
 - **Scope and limits.** Country HR users can only import and export their own country. Files have a maximum size and row count, and type and extension checks.
+- **Paused on the free plan.** Checking a large file takes the free API's whole CPU share for several seconds, so import and export are switched off unless `FILE_TRANSFERS=enabled` on the API and `VITE_FILE_TRANSFERS=enabled` in the web build (D59).
 
 ### 6.4 Exchange rates
 
@@ -246,6 +247,7 @@ Import and export design:
 - No server-side cache. TanStack Query caches pages and dashboard results in the browser and refreshes them after changes.
 - Target: list and dashboard responses under 500 ms with the seeded data. If the totals view is too slow, the fallback is stored totals on the employee row.
 - Known limit: Render's free tier sleeps when idle, so the first request after a pause can take about a minute.
+- Measured in step 20 (`docs/performance.md`): the directory and dashboard take 50 to 150 ms on the live API, well within the target.
 
 ## 9. Testing strategy
 

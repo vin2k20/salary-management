@@ -22,7 +22,7 @@ Replace ACME's salary spreadsheets with a web application where HR managers main
 | F5 | Pay history | Every pay change is dated, has a reason, and is kept. Current pay comes from the latest effective change. |
 | F6 | Exchange rates | USD rates for CAD, AUD and INR refreshed daily by a scheduled job. A toggle shows amounts in USD or local currency. Org-wide totals are in USD. |
 | F7 | Dashboard | Pay range per country, average pay per job title within a country, total cost per department, monthly and annual cost, and employees paid more than 20% above or below their peers. A country view toggles between USD and local currency. |
-| F8 | Import and export | Excel (two sheets: employees, pay components) and CSV. Every row is checked with row-level errors; nothing is saved unless the whole file is valid. |
+| F8 | Import and export | Excel (two sheets: employees, pay components) and CSV. Every row is checked with row-level errors; nothing is saved unless the whole file is valid. Built and tested, and paused on the free hosting plan, where large files use up the server (D59). |
 | F9 | Seed data | Repeatable script for 10,000 synthetic employees: India 60%, USA 15%, Canada 15%, Australia 10%, all employment types. |
 
 ## Quality bar

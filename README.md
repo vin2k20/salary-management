@@ -16,7 +16,7 @@ Live app: https://acme-salary-management-vineet.vercel.app (the first request af
 - Pay as a set of components with frequencies, shown as monthly equivalent and annual total, with a dated history of pay changes.
 - Daily USD exchange rates and a toggle between USD and local currency.
 - Dashboard: pay range per country, average pay per job title, cost per department, monthly and annual cost, and peer outliers.
-- Import and export in Excel and CSV.
+- Import and export in Excel and CSV (built, and paused on the free hosting; see [Import](#import)).
 
 Full scope: [requirements](docs/requirements.md).
 
@@ -85,11 +85,14 @@ The API reads its settings from environment variables and stops at start-up if a
 | `BREVO_API_KEY` | none, needed for `brevo` | Brevo API key (starts with `xkeysib-`) |
 | `EMAIL_FROM` | none, needed for `brevo` | Sender address verified in Brevo |
 | `RATES_REFRESH_SECRET` | none | Shared with the daily GitHub Actions refresh; at least 32 characters. Without it the scheduled refresh endpoint is off, and global HR users can still refresh by hand |
+| `FILE_TRANSFERS` | `paused` | `enabled` switches import and export on; while paused they answer 503 (see [Import](#import)) |
 | `TRUST_PROXY` | `false` | `true` behind Vercel and Render, so the login rate limit sees the client IP address |
 | `PORT` | `3000` | Port the API listens on |
 | `LOG_LEVEL` | `info` | pino log level: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 
 If the API runs on another port, start the web app with `API_PROXY_TARGET` set, for example `API_PROXY_TARGET=http://localhost:4000`.
+
+The web app has one build setting: `VITE_FILE_TRANSFERS=enabled` shows import and export; without it they are shown as paused. Set it in `apps/web/.env.local` locally, or in the Vercel project settings.
 
 ## Database and seed data
 
@@ -206,6 +209,8 @@ Employees without current pay count in the headcount but not in pay figures. Eve
 
 ## Export
 
+**Paused on the live app.** Export and import are built and tested, but switched off on the free hosting: on the free API plan, a whole-organisation file takes the server's CPU for over 10 seconds and the host restarts it ([performance check](docs/performance.md), D59). To switch them on, set `FILE_TRANSFERS=enabled` on the API and build the web app with `VITE_FILE_TRANSFERS=enabled`.
+
 The Employees page has an **Export** menu that downloads the employees matching the current filters, within the user's scope:
 
 - **Excel:** one file with two sheets, Employees and Pay components.
@@ -214,6 +219,8 @@ The Employees page has an **Export** menu that downloads the employees matching 
 The columns are the ones import will read: employee details with country fields, and one row per employee and component of current pay (component code, amount per period, currency, frequency and effective date). Scheduled pay changes are not included. In Excel, amounts are numbers with two decimals; text that starts like a formula is escaped in CSV files. The API endpoint is `GET /api/exports?format=xlsx|csv&dataset=employees|pay` with the directory filters; the file is streamed while rows are read in batches.
 
 ## Import
+
+**Paused on the live app**, like export (see [Export](#export)); the Import page says so.
 
 The Import page adds and updates employees and their current pay from a file with the export columns:
 
@@ -268,6 +275,10 @@ The first command downloads the browser once. `E2E_DATABASE_URL` must point at a
 
 GitHub Actions runs lint, the format check, the type check, all tests and the build on every push and on every pull request to `main` (`.github/workflows/ci.yml`). A second job runs the smoke test against a PostgreSQL 17 service container and keeps the report as a build artifact for 14 days.
 
+### Performance
+
+`npm run time-endpoints -w @salary/api -- --url <address> --email <user>` signs in as an HR user and times the main read endpoints (the password comes from `TIME_PASSWORD` or a hidden prompt; add `--files` to time import and export when they are switched on). The results, locally and on the live app, are in the [performance check](docs/performance.md): the directory and dashboard take 50 to 150 ms on the live API.
+
 ## Deployment
 
 Every service runs on its free plan.
@@ -306,6 +317,7 @@ To be completed in steps 21 and 22.
 | [Design approach and trade-offs](docs/design-approach-and-trade-offs.md) | The reasoning behind the design and the options considered |
 | [Implementation plan](docs/implementation-plan.md) | Step by step build plan and progress tracker |
 | [Security and accessibility checklist](docs/quality-checklist.md) | What was checked before release, how, and the results |
+| [Performance check](docs/performance.md) | Response times with the seeded data, locally and on the live app, and what was changed |
 | [Research: payroll in India](docs/research-india-payroll.md) | How salary and payroll are managed in India |
 | [Research: pay structures by country](docs/research-country-pay-structures.md) | Employee fields and pay components for the four countries |
 | [Project history](docs/ai/log.md) | One line per completed step |

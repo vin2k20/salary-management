@@ -43,3 +43,45 @@ Median response times in milliseconds, on the local setup.
 - **One query per request.** The directory and each dashboard section run one totals query each; the outliers section runs two at the same time (the page and the count). The employee page reads one employee and needs no totals over everyone.
 - **Import check.** Checking a file reads every employee, pay item in force and latest pay change in the user's scope, whatever the file holds. A file with 10 employees takes 180 ms, most of it spent loading 10,000 employees and their pay.
 - **Excel export.** The CSV files for the same rows take about 0.35 s together, so most of the 1.3 s is spent writing the Excel file.
+
+## Production
+
+Measured on 25 Sep 2026 from India against the live app (web app on Vercel; API on Render's free plan and database on Neon's free plan, both in Ohio), as global HR, 10 runs each. The sign-in check does almost no work, so its time is mostly the network between India and Ohio; the server time is estimated as the median minus that baseline.
+
+| Endpoint | Median ms | Server time, estimated ms |
+|---|---|---|
+| Sign-in check (baseline) | 284 | |
+| Exchange rates | 332 | 48 |
+| Filter choices | 276 | under 10 |
+| Directory, first page | 349 | 65 |
+| Directory, by annual total in US dollars | 413 | 129 |
+| Directory, name search | 350 | 66 |
+| Directory, filtered by department and type | 342 | 58 |
+| Directory, last page with inactive employees | 357 | 73 |
+| Employee, pay, pay history and change log | 275 to 297 | under 15 |
+| Dashboard summary | 335 | 51 |
+| Dashboard pay range | 355 | 71 |
+| Dashboard departments | 347 | 63 |
+| Dashboard job titles | 339 | 55 |
+| Dashboard outliers | 433 | 149 |
+
+Every median is under 500 ms, network included; single runs reached 767 ms at most. The server's own time for the directory and the dashboard is 50 to 150 ms, so the pay totals stay worked out on each request, with no new index and no stored totals (HLD 8).
+
+## Import and export on the free plan
+
+Timed on production before the changes below, as global HR with files for all 10,000 employees:
+
+- The three exports finished.
+- Each check of the employees file took 10.2 to 10.8 seconds on the API (0.36 s on the local setup): the free plan has a tenth of a CPU.
+- While the pay file (about 58,000 rows) was being checked, the API could not answer Render's health checks: a check runs in one go on the API's single thread, so even the health check's database connection timed out. Render then restarted the API, and the import check ended with a 502.
+
+## Changes
+
+- **Import checks read only the employees the file names.** Their codes go to the database as one array parameter, since a file can name more employees than a query can have parameters. A file with 10 employees now takes 5 ms instead of 180 ms (4 ms instead of 130 ms for India HR) on the local setup; files for everyone take as long as before.
+- **Import and export are paused by default** (D59). The API answers 503 unless `FILE_TRANSFERS=enabled`, and the web app shows both as built but paused unless it is built with `VITE_FILE_TRANSFERS=enabled`. The code and its tests stay, so they can be switched on with a larger server.
+- **Directory and dashboard:** no change needed.
+
+## Before switching import and export on again
+
+- A larger API plan, or checking files in batches that let other requests run in between (or in a worker thread), so a large file cannot hold the API.
+- Time a whole-organisation import and export on the new setup with `npm run time-endpoints -w @salary/api -- --url <address> --email <user> --files`.
