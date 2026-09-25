@@ -17,7 +17,13 @@ describe('loadConfig', () => {
       appUrl: 'http://localhost:5173',
       ratesRefreshSecret: null,
       email: { transport: 'console' },
+      fileTransfers: 'paused',
     });
+  });
+
+  it('switches import and export on only when asked', () => {
+    expect(loadConfig({ ...required, FILE_TRANSFERS: 'enabled' }).fileTransfers).toBe('enabled');
+    expect(() => loadConfig({ ...required, FILE_TRANSFERS: 'on' })).toThrow(/FILE_TRANSFERS/);
   });
 
   it('reads the port, log level and environment', () => {
