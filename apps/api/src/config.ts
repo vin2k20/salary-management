@@ -1,3 +1,4 @@
+import { FILE_TRANSFER_MODES, type FileTransferMode } from '@salary/shared';
 import type { LevelWithSilent } from 'pino';
 import { z } from 'zod';
 
@@ -17,6 +18,8 @@ export interface Config extends ScriptConfig {
   email:
     | { transport: 'console' }
     | { transport: 'brevo'; apiKey: string; from: { email: string; name: string } };
+  /** Import and export run only when enabled; paused by default on the free plan (D59). */
+  fileTransfers: FileTransferMode;
 }
 
 const scriptEnvSchema = z.object({
@@ -42,6 +45,7 @@ const serverEnvSchema = scriptEnvSchema.extend({
     .string()
     .min(32, 'RATES_REFRESH_SECRET must be at least 32 characters')
     .optional(),
+  FILE_TRANSFERS: z.enum(FILE_TRANSFER_MODES).default('paused'),
 });
 
 function parse<T extends z.ZodType>(schema: T, env: Record<string, string | undefined>) {
@@ -86,5 +90,6 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
             from: { email: data.EMAIL_FROM ?? '', name: data.EMAIL_FROM_NAME },
           }
         : { transport: 'console' },
+    fileTransfers: data.FILE_TRANSFERS,
   };
 }

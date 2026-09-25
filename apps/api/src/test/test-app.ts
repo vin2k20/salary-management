@@ -1,3 +1,4 @@
+import type { FileTransferMode } from '@salary/shared';
 import type { Express } from 'express';
 import { createApp } from '../app.ts';
 import type { Clock } from '../clock.ts';
@@ -56,6 +57,8 @@ export async function createTestApp(
     rateProvider?: RateProvider;
     /** Secret for the scheduled refresh; null turns the endpoint off. */
     ratesRefreshSecret?: string | null;
+    /** Import and export are on in tests unless a test pauses them. */
+    fileTransfers?: FileTransferMode;
   } = {},
 ): Promise<{ app: Express; logLines: LogLine[]; emails: EmailMessage[] }> {
   const logLines: LogLine[] = [];
@@ -77,6 +80,7 @@ export async function createTestApp(
     rateProvider: options.rateProvider ?? fixedRateProvider(),
     ratesRefreshSecret:
       options.ratesRefreshSecret === undefined ? TEST_RATES_SECRET : options.ratesRefreshSecret,
+    fileTransfers: options.fileTransfers ?? 'enabled',
     generateRequestId: () => 'req-1',
   });
   return { app, logLines, emails: recorder.sent };
