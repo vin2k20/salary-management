@@ -179,6 +179,16 @@ Each employee's pay is a set of components (such as Basic, HRA or Base salary), 
 
 Every pay change and move is written to the employee's change log. The API endpoints are `GET /api/employees/:id/pay`, `GET` and `POST /api/employees/:id/pay-changes`, `POST /api/employees/:id/transfer` and `GET /api/pay-components`.
 
+## Pay components
+
+The Pay components page lists the parts that make up pay (such as Basic, HRA, Bonus or Employer FICA), each with a category, a country or all countries, and a usual frequency.
+
+- **Add:** name, code (suggested from the name, and fixed once created, as import files use it), category, country and usual frequency. A code must be unique among the components a country can use.
+- **Rename, deactivate and reactivate.** A deactivated component stays on current pay but cannot be used in new pay changes.
+- Global HR users manage every component; country HR users manage their own country's components and see the all-country ones.
+
+The API endpoints are `GET` and `POST /api/pay-components` and `PATCH /api/pay-components/:id`. Every change is written to the change log.
+
 ## Exchange rates and currency
 
 - **Rates:** US dollar reference rates for CAD, AUD and INR come from the [Frankfurter API](https://frankfurter.dev) (central bank rates, no key). One row per currency and date is kept, so history is never overwritten; repeated refreshes for a date change nothing.
