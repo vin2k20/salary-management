@@ -244,3 +244,43 @@ describe('EmployeesPage dropdowns', () => {
     expect(router.state.location.search).toBe('?pageSize=100');
   });
 });
+
+describe('EmployeesPage export', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('offers Excel and CSV downloads of the filtered employees and their pay', async () => {
+    directoryApi();
+    renderApp(
+      '/employees?country=IN&department=Engineering&includeInactive=true&sort=-name&page=3',
+    );
+    const user = userEvent.setup();
+    await screen.findByRole('table');
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+
+    const filters = 'country=IN&department=Engineering&includeInactive=true';
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((item) => [item.textContent, item.getAttribute('href')])).toEqual([
+      ['Excel: employees and pay', `/api/exports?format=xlsx&${filters}`],
+      ['CSV: employees', `/api/exports?format=csv&dataset=employees&${filters}`],
+      ['CSV: pay components', `/api/exports?format=csv&dataset=pay&${filters}`],
+    ]);
+    for (const item of items) expect(item).toHaveAttribute('download');
+  });
+
+  it('exports everything in scope when no filter is set', async () => {
+    directoryApi(indiaHrUser);
+    renderApp('/employees');
+    const user = userEvent.setup();
+    await screen.findByRole('table');
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+
+    expect(await screen.findByRole('menuitem', { name: 'CSV: employees' })).toHaveAttribute(
+      'href',
+      '/api/exports?format=csv&dataset=employees',
+    );
+  });
+});
