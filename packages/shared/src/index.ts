@@ -193,3 +193,4 @@ export {
   type PayRange,
   type PayRangeByCountryResponse,
 } from './insights.ts';
+export { PEER_COMPARISON, comparePeerPay, type PeerComparison } from './peer-comparison.ts';
