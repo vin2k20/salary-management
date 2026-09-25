@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { globalHrUser, healthy, mockApi, problem } from '../test/mock-api.ts';
+import { globalHrUser, mockApi, problem } from '../test/mock-api.ts';
 import { renderApp } from '../test/render-app.tsx';
 
 const signedOut = () => problem(401, 'Sign in to continue');
@@ -69,7 +69,6 @@ describe('LoginPage', () => {
     const { calls } = mockApi({
       'GET /api/auth/me': signedOut,
       'POST /api/auth/login': () => Response.json({ user: globalHrUser }),
-      'GET /api/health': healthy,
     });
     const { router } = renderApp('/login');
 

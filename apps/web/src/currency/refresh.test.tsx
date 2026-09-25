@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { globalHrUser, healthy, indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
+import { globalHrUser, indiaHrUser, mockApi, problem } from '../test/mock-api.ts';
 import { renderApp } from '../test/render-app.tsx';
 
 const rates24 = { rateDate: '2026-09-24', rates: { USD: '1', INR: '95.96' }, stale: false };
@@ -19,7 +19,6 @@ describe('refreshing exchange rates by hand', () => {
   it('lets a global HR user fetch the latest rates', async () => {
     const { calls } = mockApi({
       'GET /api/auth/me': () => Response.json({ user: globalHrUser }),
-      'GET /api/health': healthy,
       'GET /api/fx-rates/latest': () => Response.json(rates24),
       'POST /api/fx-rates/refresh': () => Response.json({ ...rates25, stored: 4 }),
     });
@@ -39,7 +38,6 @@ describe('refreshing exchange rates by hand', () => {
   it('says so when there is nothing newer', async () => {
     mockApi({
       'GET /api/auth/me': () => Response.json({ user: globalHrUser }),
-      'GET /api/health': healthy,
       'GET /api/fx-rates/latest': () => Response.json(rates24),
       'POST /api/fx-rates/refresh': () => Response.json({ ...rates24, stored: 0 }),
     });
@@ -55,7 +53,6 @@ describe('refreshing exchange rates by hand', () => {
   it('shows the message from the API when the rate service is down', async () => {
     mockApi({
       'GET /api/auth/me': () => Response.json({ user: globalHrUser }),
-      'GET /api/health': healthy,
       'GET /api/fx-rates/latest': () => Response.json(rates24),
       'POST /api/fx-rates/refresh': () =>
         problem(502, 'The exchange rate service is not available. Try again later.'),
@@ -72,7 +69,6 @@ describe('refreshing exchange rates by hand', () => {
   it('does not offer the refresh to country HR users', async () => {
     mockApi({
       'GET /api/auth/me': () => Response.json({ user: indiaHrUser }),
-      'GET /api/health': healthy,
       'GET /api/fx-rates/latest': () => Response.json(rates24),
     });
     renderApp('/');

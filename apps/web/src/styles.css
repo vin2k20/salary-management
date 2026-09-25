@@ -17,6 +17,9 @@
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --radius: 0.625rem;
+  /* Chart marks: one blue, with a lighter step for whiskers (validated against the surface). */
+  --chart-1: #2a78d6;
+  --chart-1-soft: #86b6ef;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +38,8 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
+    --chart-1: #3987e5;
+    --chart-1-soft: #184f95;
   }
 }
 
@@ -53,6 +58,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-1-soft: var(--chart-1-soft);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
 }
