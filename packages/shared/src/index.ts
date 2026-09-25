@@ -86,6 +86,7 @@ export {
   type FxRefreshResponse,
 } from './fx-rates.ts';
 export { convertMinor, isStale, rateOnOrBefore, type UnitsPerUsd } from './currency-conversion.ts';
+export { divideHalfEven } from './rounding.ts';
 export {
   EMPLOYEE_SORT_FIELDS,
   countryName,

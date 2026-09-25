@@ -3,6 +3,7 @@ import { COUNTRIES, countryCodeSchema, type CountryCode } from './countries.ts';
 import { EMPLOYEE_STATUSES, EMPLOYMENT_TYPES } from './employees.ts';
 import { displayCurrencySchema } from './fx-rates.ts';
 import { CURRENCY_CODES, type CurrencyCode } from './money.ts';
+import { booleanParam, optionalParam, optionalTextParam } from './query-params.ts';
 
 export const EMPLOYEE_SORT_FIELDS = [
   'name',
@@ -16,30 +17,18 @@ export const EMPLOYEE_SORT_FIELDS = [
 
 export type EmployeeSortField = (typeof EMPLOYEE_SORT_FIELDS)[number];
 
-/** Query strings arrive as text; an empty value means "not set". */
-const optionalText = z.preprocess(
-  (value) => (value === '' ? undefined : value),
-  z.string().trim().max(100, 'Use at most 100 characters').optional(),
-);
-
-function optional<T extends z.ZodType>(schema: T) {
-  return z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
-}
-
 /**
  * Filters, sorting and paging for the employee directory. The same schema reads the API query
  * and the web app's URL, so a bookmarked view always means the same thing.
  */
 export const employeeListQuerySchema = z.object({
-  search: optionalText,
-  country: optional(countryCodeSchema),
-  region: optionalText,
-  department: optionalText,
-  jobTitle: optionalText,
-  employmentType: optional(z.enum(EMPLOYMENT_TYPES)),
-  includeInactive: z
-    .preprocess((value) => value === true || value === 'true', z.boolean())
-    .default(false),
+  search: optionalTextParam,
+  country: optionalParam(countryCodeSchema),
+  region: optionalTextParam,
+  department: optionalTextParam,
+  jobTitle: optionalTextParam,
+  employmentType: optionalParam(z.enum(EMPLOYMENT_TYPES)),
+  includeInactive: booleanParam,
   /** A field name, with a leading "-" for descending order. */
   sort: z
     .string()
@@ -47,7 +36,7 @@ export const employeeListQuerySchema = z.object({
     .default('name'),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(50),
-  currency: optional(displayCurrencySchema).default('local'),
+  currency: optionalParam(displayCurrencySchema).default('local'),
 });
 
 export type EmployeeListQuery = z.infer<typeof employeeListQuerySchema>;
