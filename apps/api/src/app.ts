@@ -13,6 +13,7 @@ import { compensationRouter } from './modules/compensation/compensation.routes.t
 import { employeesRouter, referenceRouter } from './modules/employees/employees.routes.ts';
 import type { RateProvider } from './modules/fx-rates/frankfurter-client.ts';
 import { fxRatesRouter, internalFxRatesRouter } from './modules/fx-rates/fx-rates.routes.ts';
+import { exportsRouter } from './modules/exports/exports.routes.ts';
 import { healthRouter } from './modules/health/health.routes.ts';
 import { insightsRouter } from './modules/insights/insights.routes.ts';
 import { payComponentsRouter } from './modules/pay-components/pay-components.routes.ts';
@@ -70,6 +71,7 @@ export function createApp({
   app.use('/api/reference', referenceRouter({ db }));
   app.use('/api/pay-components', payComponentsRouter({ db, clock }));
   app.use('/api/insights', insightsRouter({ db, clock }));
+  app.use('/api/exports', exportsRouter({ db, clock }));
 
   app.use(notFoundHandler());
   app.use(errorHandler());

@@ -202,6 +202,15 @@ The dashboard is the first page after signing in. It shows how the organisation 
 
 Employees without current pay count in the headcount but not in pay figures. Every statistic is worked out in the database; amounts are exact to the minor unit, rounded once, half to even. The API endpoints are `GET /api/insights/summary`, `/pay-range-by-country`, `/cost-by-department`, `/by-job-title` and `/outliers`, each with `country`, `measure`, `currency` and `includeInactive`.
 
+## Export
+
+The Employees page has an **Export** menu that downloads the employees matching the current filters, within the user's scope:
+
+- **Excel:** one file with two sheets, Employees and Pay components.
+- **CSV:** employees or pay components, one file each.
+
+The columns are the ones import will read: employee details with country fields, and one row per employee and component of current pay (component code, amount per period, currency, frequency and effective date). Scheduled pay changes are not included. In Excel, amounts are numbers with two decimals; text that starts like a formula is escaped in CSV files. The API endpoint is `GET /api/exports?format=xlsx|csv&dataset=employees|pay` with the directory filters; the file is streamed while rows are read in batches.
+
 ## Exchange rates and currency
 
 - **Rates:** US dollar reference rates for CAD, AUD and INR come from the [Frankfurter API](https://frankfurter.dev) (central bank rates, no key). One row per currency and date is kept, so history is never overwritten; repeated refreshes for a date change nothing.

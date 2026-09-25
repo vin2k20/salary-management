@@ -13,6 +13,7 @@ import {
 import { formatRateDate } from '../currency/rates.ts';
 import { DirectoryFilters } from '../employees/DirectoryFilters.tsx';
 import { EmployeeTable } from '../employees/EmployeeTable.tsx';
+import { ExportMenu } from '../employees/ExportMenu.tsx';
 import { useEmployeeList } from '../employees/api.ts';
 import { useDirectoryQuery } from '../employees/useDirectoryQuery.ts';
 
@@ -38,7 +39,10 @@ export function EmployeesPage() {
     <>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Employees</h1>
-        <ButtonLink to="/employees/new">Add employee</ButtonLink>
+        <div className="flex items-center gap-2">
+          <ExportMenu query={query} />
+          <ButtonLink to="/employees/new">Add employee</ButtonLink>
+        </div>
       </div>
       <div className="mt-4">
         <DirectoryFilters

@@ -229,7 +229,7 @@ Import and export design:
 | Cross-site requests | Same-origin API, SameSite=Lax cookies, and JSON-only request bodies for changes. |
 | Brute force | Rate limits on login and forgot password, per IP address and per email. |
 | Input | Zod validation on every request. Parameterised SQL through Drizzle. Upload size and type limits. |
-| Spreadsheet export | Cells that start with `=`, `+`, `-` or `@` are escaped, so exported files cannot run formulas when opened in Excel. |
+| Spreadsheet export | In CSV files, text that starts with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading apostrophe. Excel files write text as typed text cells, which Excel never runs as formulas. So exported files cannot run formulas when opened. |
 | Headers | Helmet defaults, including a content security policy for the UI on Vercel. |
 | Secrets | JWT secret, database URL, Brevo API key and the rates secret are kept in platform environment variables, never in the repository. |
 | Change log | Every change to employees, pay, pay components and users is recorded with who and when, in the same transaction. Entries are never edited, and reading them follows the same country scope. |

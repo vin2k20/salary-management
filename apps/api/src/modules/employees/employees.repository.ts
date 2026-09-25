@@ -26,8 +26,14 @@ function escapeLike(term: string): string {
   return term.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
 
-/** Filters shared by the page query and the count, always limited to the caller's scope. */
-function whereClause(scope: Scope, query: EmployeeListQuery): SQL {
+/** The directory filters, shared by the employee list and the spreadsheet export. */
+export type EmployeeFilters = Pick<
+  EmployeeListQuery,
+  'search' | 'country' | 'region' | 'department' | 'jobTitle' | 'employmentType' | 'includeInactive'
+>;
+
+/** Conditions for the directory filters, always limited to the caller's scope. */
+export function employeeConditions(scope: Scope, query: EmployeeFilters): SQL[] {
   const conditions: SQL[] = [];
   const inScope = scopeCondition(scope, employees.countryCode);
   if (inScope) conditions.push(inScope);
@@ -47,6 +53,12 @@ function whereClause(scope: Scope, query: EmployeeListQuery): SQL {
         or ${employees.employeeCode} ilike ${`${term}%`})`,
     );
   }
+  return conditions;
+}
+
+/** Filters shared by the page query and the count. */
+function whereClause(scope: Scope, query: EmployeeFilters): SQL {
+  const conditions = employeeConditions(scope, query);
   return conditions.length === 0 ? sql`` : sql`where ${sql.join(conditions, sql` and `)}`;
 }
 
