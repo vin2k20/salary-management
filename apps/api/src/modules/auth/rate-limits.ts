@@ -1,5 +1,5 @@
-import type { RequestHandler } from 'express';
-import { rateLimit } from 'express-rate-limit';
+import type { Request, RequestHandler } from 'express';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { HttpError } from '../../http/errors.ts';
 
 const windowMs = 15 * 60 * 1000;
@@ -8,7 +8,7 @@ const windowMs = 15 * 60 * 1000;
 function limiter(options: {
   limit: number;
   message: string;
-  key?: (body: unknown) => string;
+  key?: (req: Request) => string;
   countFailuresOnly?: boolean;
 }): RequestHandler {
   const { key } = options;
@@ -18,7 +18,7 @@ function limiter(options: {
     skipSuccessfulRequests: options.countFailuresOnly ?? false,
     standardHeaders: key ? false : 'draft-8',
     legacyHeaders: false,
-    ...(key ? { keyGenerator: (req) => key(req.body) } : {}),
+    ...(key ? { keyGenerator: key } : {}),
     handler: (_req, _res, next) => {
       next(new HttpError(429, options.message));
     },
@@ -43,7 +43,7 @@ export function loginRateLimits(): RequestHandler[] {
     limiter({
       limit: 5,
       message,
-      key: (body) => `login:${emailFrom(body)}`,
+      key: (req) => `login:${emailFrom(req.body)}`,
       countFailuresOnly: true,
     }),
   ];
@@ -59,7 +59,7 @@ export function forgotPasswordRateLimits(): RequestHandler[] {
     limiter({
       limit: 3,
       message: 'Too many requests for this email. Try again in 15 minutes.',
-      key: (body) => `forgot:${emailFrom(body)}`,
+      key: (req) => `forgot:${emailFrom(req.body)}`,
     }),
   ];
 }
@@ -67,4 +67,17 @@ export function forgotPasswordRateLimits(): RequestHandler[] {
 /** 20 attempts per IP address in 15 minutes to set a password from a link. */
 export function setPasswordRateLimits(): RequestHandler[] {
   return [limiter({ limit: 20, message: 'Too many requests. Try again in 15 minutes.' })];
+}
+
+/**
+ * 30 requests per signed-in user in 15 minutes for import or export (one limit each). Each can
+ * read every employee in the user's scope, so the limit keeps one user from tying up the API.
+ */
+export function fileRateLimit(kind: 'imports' | 'exports'): RequestHandler {
+  return limiter({
+    limit: 30,
+    message: `Too many ${kind}. Try again in 15 minutes.`,
+    // Signed in on these routes; the IP address is only a fallback.
+    key: (req) => `${kind}:${req.auth?.user.id ?? ipKeyGenerator(req.ip ?? '')}`,
+  });
 }
