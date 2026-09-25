@@ -748,7 +748,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 10 | Done | [#12](https://github.com/vin2k20/salary-management/pull/12) | 24 Sep 2026 | Exchange rate details (D49); daily workflow run by hand |
 | 11 | Done | [#13](https://github.com/vin2k20/salary-management/pull/13) | 24 Sep 2026 | Directory details (D50); every dropdown uses a styled Radix Select |
 | 12 | Done | [#14](https://github.com/vin2k20/salary-management/pull/14) | 24 Sep 2026 | Employee record details (D51); job title suggestions and scoped spelling checks |
-| 13 | Not started | | | |
+| 13 | Done | [#15](https://github.com/vin2k20/salary-management/pull/15) | 24 Sep 2026 | Pay change details (D52); read-only component list, totals on the employee endpoint, US dollars converted in the browser |
 | 14 | Not started | | | |
 | 15 | Not started | | | |
 | 16 | Not started | | | |

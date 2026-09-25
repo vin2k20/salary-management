@@ -110,6 +110,55 @@ export const payComponentSchema = z.object({
 
 export type PayComponent = z.infer<typeof payComponentSchema>;
 
+const CODE_MESSAGE = 'Use lower-case letters, digits and underscores, starting with a letter';
+
+const componentNameSchema = z
+  .string('Enter a name')
+  .transform((value) => value.trim().replace(/\s+/g, ' '))
+  .pipe(z.string().min(1, 'Enter a name').max(100, 'Use at most 100 characters'));
+
+/**
+ * A new pay component. The code is the component's key in import files, so it is fixed once
+ * created; a null country means the component is used in all countries.
+ */
+export const createPayComponentRequestSchema = z.object({
+  code: z
+    .string(CODE_MESSAGE)
+    .trim()
+    .max(40, 'Use at most 40 characters')
+    .regex(/^[a-z][a-z0-9_]*$/, CODE_MESSAGE),
+  name: componentNameSchema,
+  category: z.enum(PAY_COMPONENT_CATEGORIES, 'Choose a category'),
+  countryCode: z
+    .enum(COUNTRY_CODES as [CountryCode, ...CountryCode[]], 'Choose a country, or all countries')
+    .nullable(),
+  defaultFrequency: z.enum(
+    PAY_FREQUENCY_CODES as [PayFrequencyCode, ...PayFrequencyCode[]],
+    'Choose how often it is usually paid',
+  ),
+});
+
+export type CreatePayComponentRequest = z.infer<typeof createPayComponentRequestSchema>;
+
+/** Renames a component, or deactivates or reactivates it. */
+export const updatePayComponentRequestSchema = z
+  .object({ name: componentNameSchema, isActive: z.boolean() })
+  .partial()
+  // Fields left out of the request are absent from the parsed value.
+  .refine((value) => Object.keys(value).length > 0, { message: 'Nothing to change' });
+
+export type UpdatePayComponentRequest = z.infer<typeof updatePayComponentRequestSchema>;
+
+/** A code suggested from a name: "Meal allowance" becomes "meal_allowance". */
+export function suggestComponentCode(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^[^a-z]+/, '')
+    .replace(/_+$/, '')
+    .slice(0, 40);
+}
+
 export const payComponentListQuerySchema = z.object({
   /** Components that can be used in this country: its own and those for all countries. */
   country: z.preprocess(
@@ -126,6 +175,10 @@ export const payComponentListResponseSchema = z.object({
 });
 
 export type PayComponentListResponse = z.infer<typeof payComponentListResponseSchema>;
+
+export const payComponentResponseSchema = z.object({ component: payComponentSchema });
+
+export type PayComponentResponse = z.infer<typeof payComponentResponseSchema>;
 
 /** Annual totals on a date and their monthly equivalents, in the employee's local currency. */
 export const payTotalsSchema = z.object({

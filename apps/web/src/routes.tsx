@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { NewEmployeePage } from './pages/NewEmployeePage.tsx';
 import { NotFoundPage } from './pages/NotFoundPage.tsx';
+import { PayComponentsPage } from './pages/PayComponentsPage.tsx';
 import { SetPasswordPage } from './pages/SetPasswordPage.tsx';
 import { UsersPage } from './pages/UsersPage.tsx';
 
@@ -24,6 +25,7 @@ export const routes: RouteObject[] = [
       { path: 'employees/new', element: <NewEmployeePage /> },
       { path: 'employees/:id', element: <EmployeePage /> },
       { path: 'employees/:id/edit', element: <EditEmployeePage /> },
+      { path: 'pay-components', element: <PayComponentsPage /> },
       {
         path: 'users',
         element: (

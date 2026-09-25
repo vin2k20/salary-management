@@ -10,5 +10,6 @@ export interface NavigationItem {
 export const NAVIGATION: NavigationItem[] = [
   { to: '/', label: 'Dashboard' },
   { to: '/employees', label: 'Employees' },
+  { to: '/pay-components', label: 'Pay components' },
   { to: '/users', label: 'Users', roles: ['global_hr'] },
 ];
