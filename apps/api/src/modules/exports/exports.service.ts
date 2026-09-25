@@ -115,16 +115,22 @@ export async function* payRowBatches(
   }
 }
 
-function rowBatches(
+/** Where a file's rows come from: batches of rows for each dataset. */
+export type RowSource = (
   dataset: SpreadsheetDataset,
+) => AsyncIterable<Record<string, string | null>[]> | Iterable<Record<string, string | null>[]>;
+
+/** Rows of the employees matching the filters, and their current pay. */
+function exportSource(
   db: Database,
   scope: Scope,
   filters: EmployeeFilters,
   today: string,
-): AsyncGenerator<Record<string, string | null>[]> {
-  return dataset === 'employees'
-    ? employeeRowBatches(db, scope, filters)
-    : payRowBatches(db, scope, filters, today);
+): RowSource {
+  return (dataset) =>
+    dataset === 'employees'
+      ? employeeRowBatches(db, scope, filters)
+      : payRowBatches(db, scope, filters, today);
 }
 
 function headerRow(columns: readonly SpreadsheetColumn[]): Record<string, string> {
@@ -137,6 +143,22 @@ async function write(stream: Writable, chunk: string) {
 }
 
 /** One dataset as a CSV file, with formulas escaped (HLD 7). */
+export async function writeCsvRows(
+  stream: Writable,
+  dataset: SpreadsheetDataset,
+  source: RowSource,
+) {
+  const { columns } = SPREADSHEETS[dataset];
+  const textColumns = columns.map((column) => ({ ...column, kind: 'text' as const }));
+  // Headers are plain words, written like text cells.
+  await write(stream, CSV_BOM + csvLine(textColumns, headerRow(columns)));
+  for await (const batch of source(dataset)) {
+    await write(stream, batch.map((row) => csvLine(columns, row)).join(''));
+  }
+  stream.end();
+}
+
+/** The employees matching the filters, or their current pay, as a CSV file. */
 export async function writeCsv(
   stream: Writable,
   dataset: SpreadsheetDataset,
@@ -145,14 +167,7 @@ export async function writeCsv(
   filters: EmployeeFilters,
   today: string,
 ) {
-  const { columns } = SPREADSHEETS[dataset];
-  const textColumns = columns.map((column) => ({ ...column, kind: 'text' as const }));
-  // Headers are plain words, written like text cells.
-  await write(stream, CSV_BOM + csvLine(textColumns, headerRow(columns)));
-  for await (const batch of rowBatches(dataset, db, scope, filters, today)) {
-    await write(stream, batch.map((row) => csvLine(columns, row)).join(''));
-  }
-  stream.end();
+  await writeCsvRows(stream, dataset, exportSource(db, scope, filters, today));
 }
 
 /**
@@ -166,13 +181,7 @@ function cellValue(value: string | null, column: SpreadsheetColumn): string | nu
 }
 
 /** Both datasets as one Excel file with two sheets, streamed as it is written. */
-export async function writeXlsx(
-  stream: Writable,
-  db: Database,
-  scope: Scope,
-  filters: EmployeeFilters,
-  today: string,
-) {
+export async function writeXlsxRows(stream: Writable, source: RowSource) {
   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
     stream,
     useStyles: true,
@@ -187,7 +196,7 @@ export async function writeXlsx(
     const header = sheet.addRow(columns.map((column) => column.header));
     header.font = { bold: true };
     header.commit();
-    for await (const batch of rowBatches(dataset, db, scope, filters, today)) {
+    for await (const batch of source(dataset)) {
       for (const values of batch) {
         const row = sheet.addRow(
           columns.map((column) => cellValue(values[column.key] ?? null, column)),
@@ -201,4 +210,15 @@ export async function writeXlsx(
     sheet.commit();
   }
   await workbook.commit();
+}
+
+/** The employees matching the filters and their current pay, as one Excel file. */
+export async function writeXlsx(
+  stream: Writable,
+  db: Database,
+  scope: Scope,
+  filters: EmployeeFilters,
+  today: string,
+) {
+  await writeXlsxRows(stream, exportSource(db, scope, filters, today));
 }
