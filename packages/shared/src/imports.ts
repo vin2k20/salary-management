@@ -15,6 +15,19 @@ export const IMPORT_LIMITS = {
   maxListed: 500,
 } as const;
 
+/**
+ * Whether import and export run on a deployment. They are built and tested, but paused by
+ * default: on the free server plan (0.1 CPU), checking a large file holds the API for several
+ * seconds, long enough for the host to restart it (D59).
+ */
+export const FILE_TRANSFER_MODES = ['enabled', 'paused'] as const;
+
+export type FileTransferMode = (typeof FILE_TRANSFER_MODES)[number];
+
+/** Shown by the API and the web app while import and export are paused. */
+export const FILE_TRANSFERS_PAUSED_MESSAGE =
+  'Import and export are built but paused on this deployment, because the free server plan does not have the resources to handle large files. They can be switched on with a larger server.';
+
 /** The empty file to fill in: Excel with both sheets, or CSV for one dataset. */
 export const templateQuerySchema = z.object({
   format: z.enum(EXPORT_FORMATS, 'Choose xlsx or csv'),
