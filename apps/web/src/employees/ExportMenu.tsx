@@ -1,5 +1,6 @@
 import type { EmployeeListQuery, ExportFormat, SpreadsheetDataset } from '@salary/shared';
 import { Button } from '../components/ui/button.tsx';
+import { fileTransfersEnabled } from '../features.ts';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +45,18 @@ const OPTIONS: { label: string; format: ExportFormat; dataset?: SpreadsheetDatas
  * with it on the same origin.
  */
 export function ExportMenu({ query }: { query: EmployeeListQuery }) {
+  if (!fileTransfersEnabled()) {
+    return (
+      <>
+        <span id="export-paused" className="text-xs text-muted-foreground">
+          Export is built but paused: limited server resources.
+        </span>
+        <Button variant="secondary" disabled aria-describedby="export-paused">
+          Export
+        </Button>
+      </>
+    );
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
