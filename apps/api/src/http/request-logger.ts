@@ -2,13 +2,14 @@ import { randomUUID } from 'node:crypto';
 import type { RequestHandler } from 'express';
 import type { Logger } from 'pino';
 import { pinoHttp } from 'pino-http';
+import { logSafeError } from '../logger.ts';
 
 const requestIdPattern = /^[A-Za-z0-9._-]{1,64}$/;
 
 /**
  * Logs one line per request and gives every request an ID, returned in the X-Request-Id header.
  * Only the method, path and status are logged: query strings and headers can hold personal data
- * or credentials.
+ * or credentials. Errors leave out the values of failed database queries for the same reason.
  */
 export function requestLogger(
   logger: Logger,
@@ -32,6 +33,7 @@ export function requestLogger(
         path: req.url.split('?')[0],
       }),
       res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
+      err: logSafeError,
     },
     customLogLevel: (_req, res, error) => {
       if (error !== undefined || res.statusCode >= 500) return 'error';
