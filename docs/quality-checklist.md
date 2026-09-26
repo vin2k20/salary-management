@@ -37,7 +37,12 @@ This records the security, accessibility and quality review before release: what
 | Web bundle | Each signed-in page loads when first opened. The first download fell from 335 KB to 91 KB gzipped; the dashboard's charts (108 KB) load with the dashboard only |
 | Loading, error and empty states | Every page shows loading and error states; lists that can be empty (directory, dashboard sections, pay history, change log, import) say so |
 
-## To check after release
+## Checked after release
 
-- Response headers on the production URL (`curl -I`), and a browser console free of policy errors.
-- A pass with a screen reader (VoiceOver) through sign-in, the directory, an employee and the dashboard.
+| Area | How it was checked | Result |
+|---|---|---|
+| Response headers | `curl -I` on the production URL, 25 Sep 2026 | Pass: the web app sends every header in `vercel.json` and Vercel adds HSTS; the API sends Helmet's headers |
+| Content security policy in use | Browser console during the release walk-through | Pass: no errors |
+| Main paths for both roles | Walk-through on the production URL in a private window as global HR and India HR, 26 Sep 2026 | Pass: dashboard and currency switch, search, a pay change with its history and change log, the dashboard following it, India HR limited to India ("Employee not found" for a USA employee), import and export shown as paused |
+| Narrow screens | Browser's responsive design mode | Pass |
+| Screen reader | Not done with VoiceOver | Open; the structure was checked in the accessibility tree (see Accessibility) |
