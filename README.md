@@ -6,7 +6,7 @@ A web application where global and country HR managers maintain pay data for 10,
 
 Status: released. Every feature in the [requirements](docs/requirements.md) is built and tested; import and export are paused on the free hosting (see [Import](#import)). The build history is in the [implementation plan](docs/implementation-plan.md).
 
-Live app: https://acme-salary-management-vineet.vercel.app (the first request after a quiet period can take about a minute while the free API service wakes up). See [Demo](#demo) to sign in.
+Live app: https://acme-salary-management-vineet.vercel.app (the first request after a quiet period can take about a minute while the free API service wakes up). See [Demo](#demo) to sign in, or watch the [demo video](https://drive.google.com/file/d/1UI5zKy-6qbNgD4fp2yunc1IBYVHTODbz/view?usp=sharing).
 
 ## Overview
 
@@ -320,7 +320,7 @@ How it fits together:
 - On an employee: record a pay change, see it in pay history and the change log, and see the dashboard follow.
 - Import and export show as built but paused, as the free server plan cannot handle large files ([performance check](docs/performance.md)).
 
-**Demo video:** link to follow.
+**Demo video:** [a walk-through of the application](https://drive.google.com/file/d/1UI5zKy-6qbNgD4fp2yunc1IBYVHTODbz/view?usp=sharing) (Google Drive).
 
 ## Documents
 

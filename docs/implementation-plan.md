@@ -781,7 +781,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 20 | Done | [#22](https://github.com/vin2k20/salary-management/pull/22) | 25 Sep 2026 | Timings within target (D59); import and export paused on the free hosting |
 | 21 | Done | [#23](https://github.com/vin2k20/salary-management/pull/23) | 26 Sep 2026 | Release checked by a walk-through (D60); demo password shared separately |
 | 22 | Done | [#24](https://github.com/vin2k20/salary-management/pull/24) | 26 Sep 2026 | Light theme by default, dark theme and a switch (D61) |
-| 23 | Not started | | | |
+| 23 | Done | [#25](https://github.com/vin2k20/salary-management/pull/25), [#26](https://github.com/vin2k20/salary-management/pull/26) | 26 Sep 2026 | App icon, possible improvements and up-to-date documents; demo video linked from the README |
 
 ## 7. Change log
 
