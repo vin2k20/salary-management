@@ -334,6 +334,7 @@ How it fits together:
 | [Implementation plan](docs/implementation-plan.md) | Step by step build plan and progress tracker |
 | [Security and accessibility checklist](docs/quality-checklist.md) | What was checked before release, how, and the results |
 | [Performance check](docs/performance.md) | Response times with the seeded data, locally and on the live app, and what was changed |
+| [Possible improvements](docs/possible-improvements.md) | What to build next, in a suggested order, such as monthly pay tracking, review cycles and pay bands |
 | [Research: payroll in India](docs/research-india-payroll.md) | How salary and payroll are managed in India |
 | [Research: pay structures by country](docs/research-country-pay-structures.md) | Employee fields and pay components for the four countries |
 | [Project history](docs/ai/log.md) | One line per completed step |
