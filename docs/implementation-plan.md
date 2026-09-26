@@ -108,7 +108,8 @@ Give the new session this context:
 | 19 | End-to-end smoke test | Hardening | 13, 15 | 18 |
 | 20 | Performance check | Hardening | 11, 15 | 18, 19 |
 | 21 | Production release | Delivery | 18 to 20 | None |
-| 22 | Demo video and submission | Delivery | 21 | None |
+| 22 | Light and dark themes | Delivery | 21 | None |
+| 23 | Demo video and submission | Delivery | 22 | None |
 
 ```
 Foundation:  00 > 01 > 02 and 03 > 04
@@ -120,7 +121,7 @@ Features:    07 > 10
              06, 10 and 11 > 15
              13 > 16 > 17
 Hardening:   09 to 17 > 18, 19, 20
-Delivery:    18, 19 and 20 > 21 > 22
+Delivery:    18, 19 and 20 > 21 > 22 > 23
 ```
 
 Steps 09, 14 and 15 are the best candidates for parallel sessions once their dependencies are merged.
@@ -697,7 +698,29 @@ docs: complete project history
 chore: <release configuration changes, if any>
 ```
 
-### Step 22: Demo video and submission
+### Step 22: Light and dark themes
+
+**Goal:** The app opens in a light theme with its own palette, and users can switch to dark.
+
+**Read first:** HLD 3.1, decisions D45, D57.
+
+**Scope:** A warm light palette (off-white page, white cards, sand for quiet areas, teal for actions and charts, mint for selected items) and a matching dark theme, both as the existing colour tokens. Light by default for everyone; a Light / Dark switch in the header, remembered by the browser. A small same-origin script sets the saved theme before the first paint, since the content security policy blocks inline scripts. Every text and control colour meets WCAG AA contrast in both themes.
+
+**Tests:** The theme helpers (light by default, the choice is set and stored, storage errors are ignored). The switch in the header. The smoke test opens in light, switches to dark and keeps it after a reload. Automated accessibility checks still pass.
+
+**Manual check:** Sign-in, dashboard, directory, employee page, dialogs and menus in both themes, on a wide and a narrow screen, with colour contrast checked in the browser. After the deploy, the live app opens light and shows no policy errors.
+
+**Planned commits:**
+
+```
+test(web): theme switch sets and remembers light or dark
+feat(web): add warm light palette with teal accents and a dark theme
+feat(web): add light and dark switch remembered by the browser
+test(e2e): theme choice survives a reload
+docs: document light and dark themes
+```
+
+### Step 23: Demo video and submission
 
 **Goal:** Record the demo and hand in the repository.
 
@@ -756,8 +779,9 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 18 | Done | [#20](https://github.com/vin2k20/salary-management/pull/20) | 25 Sep 2026 | Security and quality pass (D57); results in `quality-checklist.md` |
 | 19 | Done | [#21](https://github.com/vin2k20/salary-management/pull/21) | 25 Sep 2026 | Playwright smoke test (D58) in its own CI job |
 | 20 | Done | [#22](https://github.com/vin2k20/salary-management/pull/22) | 25 Sep 2026 | Timings within target (D59); import and export paused on the free hosting |
-| 21 | Not started | | | |
+| 21 | Done | [#23](https://github.com/vin2k20/salary-management/pull/23) | 26 Sep 2026 | Release checked by a walk-through (D60); demo password shared separately |
 | 22 | Not started | | | |
+| 23 | Not started | | | |
 
 ## 7. Change log
 
@@ -768,6 +792,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 24 Sep 2026 | Commit message format added to section 2.2: subject, short summary, bullet points about the software, co-author trailer; every commit confirmed first. |
 | 24 Sep 2026 | Version 0.3: details confirmed; added the change log, moving employees between countries, monthly cost from current pay and the currency toggle on country views to steps 05, 09, 12, 13, 14 and 15. |
 | 24 Sep 2026 | Version 0.2: clarification questions answered. Added steps for user management, exchange rates, pay items and pay history, and the pay component catalogue; the dashboard replaces pay insights; 23 steps in total. |
+| 26 Sep 2026 | Added step 22, light and dark themes, before the demo video, which is now step 23. |
 
 ## 8. Hosting costs
 

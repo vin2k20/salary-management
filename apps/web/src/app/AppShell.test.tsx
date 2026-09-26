@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { globalHrUser } from '../test/mock-api.ts';
 import { AppShell } from './AppShell.tsx';
 
@@ -47,8 +47,50 @@ describe('AppShell', () => {
     expect(screen.getByRole('button', { name: 'Local currency' })).toHaveFocus();
     await user.tab();
     await user.tab();
+    expect(screen.getByRole('button', { name: 'Light' })).toHaveFocus();
+    await user.tab();
+    await user.tab();
     expect(screen.getByRole('button', { name: 'Sign out' })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveFocus();
+  });
+});
+
+describe('AppShell theme switch', () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.theme;
+    localStorage.clear();
+  });
+
+  it('offers Light and Dark, with Light chosen at first', () => {
+    renderShell();
+
+    const group = screen.getByRole('group', { name: 'Colour theme' });
+    expect(within(group).getByRole('button', { name: 'Light' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(group).getByRole('button', { name: 'Dark' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('switches the page to dark and remembers the choice', async () => {
+    const user = userEvent.setup();
+    renderShell();
+
+    await user.click(screen.getByRole('button', { name: 'Dark' }));
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('theme')).toBe('dark');
+    expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('shows Dark as chosen when the page was opened in dark', () => {
+    document.documentElement.dataset.theme = 'dark';
+    renderShell();
+
+    expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

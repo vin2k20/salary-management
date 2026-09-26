@@ -17,6 +17,7 @@ Live app: https://acme-salary-management-vineet.vercel.app (the first request af
 - Daily USD exchange rates and a toggle between USD and local currency.
 - Dashboard: pay range per country, average pay per job title, cost per department, monthly and annual cost, and peer outliers.
 - Import and export in Excel and CSV (built, and paused on the free hosting; see [Import](#import)).
+- A light theme by default (warm off-white with teal) and a dark theme, chosen with the Light / Dark switch in the header.
 
 Full scope: [requirements](docs/requirements.md).
 
@@ -250,7 +251,7 @@ The API endpoints are `GET /api/imports/template`, `POST /api/imports/validate` 
 - Every signed-in route is checked in tests for both roles; a country HR user never reaches another country's records.
 - The web app sends a content security policy and other security headers (`vercel.json`); the API uses Helmet.
 - Sign-in, password reset, import and export are rate limited; logs hold no pay amounts, passwords or query values.
-- Key pages are checked with axe-core in the tests, and by hand for keyboard use, contrast and screen reader structure.
+- Key pages are checked with axe-core in the tests, and by hand for keyboard use, contrast and screen reader structure. Both themes meet WCAG AA colour contrast.
 
 Results and details: [security and accessibility checklist](docs/quality-checklist.md).
 

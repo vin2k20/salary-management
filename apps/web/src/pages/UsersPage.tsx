@@ -156,7 +156,7 @@ export function UsersPage() {
       {users.isPending && <p className="mt-6 text-sm text-muted-foreground">Loading users...</p>}
       {users.isError && <Alert className="mt-6">{errorMessage(users.error)}</Alert>}
       {users.data && (
-        <div className="mt-6 overflow-x-auto rounded-lg border">
+        <div className="mt-6 overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-muted-foreground">
               <tr>

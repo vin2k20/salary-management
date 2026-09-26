@@ -136,7 +136,7 @@ export function ImportPage() {
     return (
       <>
         <h1 className="text-2xl font-semibold">Import</h1>
-        <p className="mt-4 max-w-3xl rounded-lg border p-4 text-sm">
+        <p className="mt-4 max-w-3xl rounded-lg border bg-card p-4 text-sm">
           {FILE_TRANSFERS_PAUSED_MESSAGE}
         </p>
       </>
@@ -183,7 +183,7 @@ function ImportTool() {
       </ul>
 
       {save.isSuccess ? (
-        <div role="status" className="mt-6 rounded-lg border p-4 text-sm">
+        <div role="status" className="mt-6 rounded-lg border bg-card p-4 text-sm">
           <p>{resultSentence(save.data)}</p>
           <div className="mt-3 flex gap-2">
             <Link to="/employees" className="underline underline-offset-4">

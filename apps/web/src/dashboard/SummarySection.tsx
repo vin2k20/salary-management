@@ -40,7 +40,7 @@ export function SummaryFigures({
     <div className={status.isPlaceholderData ? 'opacity-60 transition-opacity' : undefined}>
       <dl className="mt-6 grid gap-4 sm:grid-cols-3">
         {figures.map((figure) => (
-          <div key={figure.label} className="rounded-lg border p-4">
+          <div key={figure.label} className="rounded-lg border bg-card p-4">
             <dt className="text-sm text-muted-foreground">{figure.label}</dt>
             <dd className="mt-1 text-2xl font-semibold">{figure.value}</dd>
           </div>

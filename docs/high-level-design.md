@@ -48,6 +48,7 @@ Across the app:
 - A **currency toggle** switches amounts between USD and local currency. On any view of one country (the dashboard for a country, a directory filtered to one country, an employee record) it switches between USD and that country's currency. On the all-countries dashboard, org-wide totals are always in USD and the per-country figures follow the toggle. The choice is kept in the URL and in the browser, and every screen that shows converted amounts also shows the date of the rates used.
 - **TanStack Query** holds server data and refreshes it after changes. **TanStack Table** renders lists with server-side paging, sorting and filtering. **React Hook Form** with the shared Zod schemas validates forms. **shadcn/ui** (on Radix) provides accessible components, and **Recharts** draws the charts.
 - The URL holds list filters, so a filtered view can be bookmarked and shared.
+- A **theme switch** in the header chooses between the light theme (the default: warm off-white with teal) and a dark theme. The browser remembers the choice, and a small script applies it before the page is drawn (D61).
 - The UI hides actions a user cannot take, but the API enforces every rule on its own.
 
 ### 3.2 API

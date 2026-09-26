@@ -92,7 +92,7 @@ export function EmployeeTable({
   const sortField = descending ? sort.slice(1) : sort;
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-muted-foreground">
           {table.getHeaderGroups().map((group) => (

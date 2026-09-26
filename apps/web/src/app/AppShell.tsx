@@ -6,6 +6,7 @@ import { currentUserQueryKey, logout } from '../auth/session.ts';
 import { Button } from '../components/ui/button.tsx';
 import { CurrencyToggle } from '../currency/CurrencyToggle.tsx';
 import { cn } from '../lib/cn.ts';
+import { ThemeToggle } from '../theme/ThemeToggle.tsx';
 import { NAVIGATION } from './navigation.ts';
 
 export function roleLabel(user: CurrentUser): string {
@@ -41,7 +42,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           className={({ isActive }) =>
             cn(
               'rounded-md px-3 py-1.5 text-sm whitespace-nowrap text-muted-foreground hover:text-foreground',
-              isActive && 'bg-secondary text-foreground',
+              isActive && 'bg-secondary text-secondary-foreground',
             )
           }
         >
@@ -59,13 +60,14 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       >
         Skip to main content
       </a>
-      <header className="border-b">
+      <header className="border-b bg-card">
         {/* Title and account controls on the first row, the navigation on its own row below,
             in the same order for the keyboard as on screen. */}
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-2 px-4 pt-3 sm:px-6">
           <span className="font-semibold whitespace-nowrap">ACME Salary Management</span>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
             <CurrencyToggle />
+            <ThemeToggle />
             <div className="text-right text-sm leading-tight">
               <div className="font-medium">{user.name}</div>
               <div className="text-muted-foreground">{roleLabel(user)}</div>
