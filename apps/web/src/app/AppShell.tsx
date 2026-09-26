@@ -6,6 +6,7 @@ import { currentUserQueryKey, logout } from '../auth/session.ts';
 import { Button } from '../components/ui/button.tsx';
 import { CurrencyToggle } from '../currency/CurrencyToggle.tsx';
 import { cn } from '../lib/cn.ts';
+import { ThemeToggle } from '../theme/ThemeToggle.tsx';
 import { NAVIGATION } from './navigation.ts';
 
 export function roleLabel(user: CurrentUser): string {
@@ -66,6 +67,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           <span className="font-semibold whitespace-nowrap">ACME Salary Management</span>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
             <CurrencyToggle />
+            <ThemeToggle />
             <div className="text-right text-sm leading-tight">
               <div className="font-medium">{user.name}</div>
               <div className="text-muted-foreground">{roleLabel(user)}</div>

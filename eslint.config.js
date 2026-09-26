@@ -29,5 +29,10 @@ export default defineConfig(
     files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
   },
+  {
+    // Plain scripts the web app serves as they are, such as the theme script.
+    files: ['apps/web/public/**/*.js'],
+    languageOptions: { globals: { document: 'readonly', localStorage: 'readonly' } },
+  },
   eslintConfigPrettier,
 );
