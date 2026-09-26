@@ -21,17 +21,21 @@ function summaryFigure(page: Page, label: string): Locator {
     .getByRole('definition');
 }
 
-test('sign in, search, change pay and view the dashboard in both currencies', async ({ page }) => {
+/** Signs in as India's HR user from the sign-in page, which opens the dashboard. */
+async function signIn(page: Page) {
   const password = process.env.E2E_HR_PASSWORD;
   if (!password) throw new Error('E2E_HR_PASSWORD is set by the Playwright config');
-
-  // Signing in as India's HR user opens the dashboard for India, in rupees.
-  await page.goto('/');
   await expect(page).toHaveURL(/\/login$/);
   await page.getByRole('textbox', { name: 'Email' }).fill(INDIA_HR);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+}
+
+test('sign in, search, change pay and view the dashboard in both currencies', async ({ page }) => {
+  // Signing in as India's HR user opens the dashboard for India, in rupees.
+  await page.goto('/');
+  await signIn(page);
   const annualCost = summaryFigure(page, 'Annual cost');
   await expect(annualCost).toContainText('₹');
   const costBefore = await rupees(annualCost);
@@ -92,4 +96,24 @@ test('sign in, search, change pay and view the dashboard in both currencies', as
   await expect(annualCost).toContainText('$');
   await expect(annualCost).not.toContainText('₹');
   await expect(page.getByText(/^US dollars at rates of/).first()).toBeVisible();
+});
+
+test('opens in the light theme and keeps a dark choice after a reload', async ({ page }) => {
+  const html = page.locator('html');
+  await page.goto('/');
+  await expect(html).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(250, 248, 245)');
+  await signIn(page);
+
+  const dark = page.getByRole('group', { name: 'Colour theme' }).getByRole('button', {
+    name: 'Dark',
+  });
+  await dark.click();
+  await expect(html).toHaveAttribute('data-theme', 'dark');
+
+  // The saved choice is applied before the page draws, and the switch shows it.
+  await page.reload();
+  await expect(html).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(17, 20, 23)');
+  await expect(dark).toHaveAttribute('aria-pressed', 'true');
 });
