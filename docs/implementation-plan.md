@@ -755,7 +755,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 17 | Done | [#19](https://github.com/vin2k20/salary-management/pull/19) | 25 Sep 2026 | Import details (D56); Excel files up to 1 MB and 20,000 rows |
 | 18 | Done | [#20](https://github.com/vin2k20/salary-management/pull/20) | 25 Sep 2026 | Security and quality pass (D57); results in `quality-checklist.md` |
 | 19 | Done | [#21](https://github.com/vin2k20/salary-management/pull/21) | 25 Sep 2026 | Playwright smoke test (D58) in its own CI job |
-| 20 | Not started | | | |
+| 20 | Done | [#22](https://github.com/vin2k20/salary-management/pull/22) | 25 Sep 2026 | Timings within target (D59); import and export paused on the free hosting |
 | 21 | Not started | | | |
 | 22 | Not started | | | |
 

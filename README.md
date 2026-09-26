@@ -4,9 +4,9 @@
 
 A web application where global and country HR managers maintain pay data for 10,000 employees in India, the USA, Canada and Australia, and see how the organisation pays people on a dashboard.
 
-Status: in development; progress is tracked in the [implementation plan](docs/implementation-plan.md).
+Status: released. Every feature in the [requirements](docs/requirements.md) is built and tested; import and export are paused on the free hosting (see [Import](#import)). The build history is in the [implementation plan](docs/implementation-plan.md).
 
-Live app: https://acme-salary-management-vineet.vercel.app (the first request after a quiet period can take about a minute while the free API service wakes up). This README is an outline and is filled in as each step of the [implementation plan](docs/implementation-plan.md) is merged.
+Live app: https://acme-salary-management-vineet.vercel.app (the first request after a quiet period can take about a minute while the free API service wakes up). See [Demo](#demo) to sign in.
 
 ## Overview
 
@@ -27,7 +27,7 @@ Full scope: [requirements](docs/requirements.md).
 - **Web app** (`apps/web`): a React single page app built with Vite. It calls the API under `/api` on its own origin: through the Vite proxy in development and a Vercel rewrite in production, so the auth cookie stays first-party and no CORS setup is needed.
 - **API** (`apps/api`): a stateless Express 5 service. Node.js 24 runs its TypeScript source directly, with no build step. Every request gets an ID, returned in the `X-Request-Id` header and written on every log line. Errors use the problem details format (RFC 9457) and include the request ID.
 - **Shared package** (`packages/shared`): Zod schemas and types used by both the API and the web app.
-- **Database** (from step 05): PostgreSQL on Neon, in the same AWS region as the API.
+- **Database**: PostgreSQL on Neon, in the same AWS region as the API.
 
 Full details are in the [high level design](docs/high-level-design.md).
 
@@ -287,7 +287,7 @@ Every service runs on its free plan.
 |---|---|---|---|
 | Web app | Vercel (Hobby) | https://acme-salary-management-vineet.vercel.app | `vercel.json` |
 | API | Render free web service, Ohio | https://acme-salary-api-oxu3.onrender.com | `render.yaml` |
-| Database (from step 05) | Neon free plan, AWS us-east-2 (Ohio) | Connection string in Render settings only | |
+| Database | Neon free plan, AWS us-east-2 (Ohio) | Connection string in Render settings only | |
 
 How it fits together:
 
@@ -295,16 +295,31 @@ How it fits together:
 - A merge to `main` deploys both parts. Vercel builds the web app. Render deploys the API only after the CI workflow has passed on the commit, and only when API, shared or root package files change.
 - Each pull request gets a Vercel preview deployment. Previews need a Vercel login and call the production API.
 - The Render build runs `npm ci --omit=dev` and then applies database migrations, so they run before the new version starts. A failed migration fails the deploy and the running version stays up.
-- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV`, `LOG_LEVEL`, `TRUST_PROXY`, `APP_URL` and `EMAIL_TRANSPORT` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch), `JWT_SECRET`, `BREVO_API_KEY`, `EMAIL_FROM`, `RATES_REFRESH_SECRET` and later secrets are set in the Render dashboard and never committed.
+- The Render service runs `node apps/api/src/server.ts`, with a health check on `/api/health`, which also checks the database. Render sets `PORT`; `NODE_ENV`, `LOG_LEVEL`, `TRUST_PROXY`, `APP_URL` and `EMAIL_TRANSPORT` come from `render.yaml`. `DATABASE_URL` (the pooled string of the Neon production branch), `JWT_SECRET`, `BREVO_API_KEY`, `EMAIL_FROM`, and `RATES_REFRESH_SECRET` are set in the Render dashboard and never committed. Import and export stay paused, since `FILE_TRANSFERS` and `VITE_FILE_TRANSFERS` are not set.
 - The free Render service sleeps after 15 minutes without traffic and takes about a minute to wake. Open the app a few minutes before a demo.
 
 ## Demo
 
-To be completed in steps 21 and 22.
+**Live app:** https://acme-salary-management-vineet.vercel.app. Open it a minute before use: the free API service sleeps after 15 minutes without traffic and takes about a minute to wake.
 
-- Production URL
-- Demo logins for both roles
-- Demo video
+**Demo logins:** the production database holds the 10,000 seeded employees and the demo HR users below. The password is shared separately by the author.
+
+| Email | Role | Sees |
+|---|---|---|
+| `global.hr@acme.example.com` | Global HR | All countries, and manages users |
+| `hr.in@acme.example.com` | Country HR | India |
+| `hr.us@acme.example.com` | Country HR | USA |
+| `hr.ca@acme.example.com` | Country HR | Canada |
+| `hr.au@acme.example.com` | Country HR | Australia |
+
+**Things to try:**
+
+- As global HR: the dashboard for all countries and for one country, switching between local currency and US dollars; the Users page; adding a pay component.
+- As a country HR user: the directory and dashboard show only that country; opening another country's employee by its address shows "Employee not found".
+- On an employee: record a pay change, see it in pay history and the change log, and see the dashboard follow.
+- Import and export show as built but paused, as the free server plan cannot handle large files ([performance check](docs/performance.md)).
+
+**Demo video:** link to follow.
 
 ## Documents
 
