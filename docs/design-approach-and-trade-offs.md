@@ -1,12 +1,27 @@
 # Salary Management for ACME HR: Design Approach, Choices and Trade-offs
 
-Author: Vineet Kumar | Date: 24 Sep 2026 | Version: 0.2 (companion to the requirements, decisions and high level design documents; updated with the answered clarification questions)
+Author: Vineet Kumar | Date: 26 Sep 2026 | Version: 1.0 (companion to the requirements, decisions and high level design documents; updated to match the released application)
 
 ## 1. Summary
 
 The application is a **modular monolith**: one React single page app and one Node.js API, backed by one PostgreSQL database. Inside the API, code is grouped **by feature** (auth, users, employees, compensation, pay components, insights, exchange rates, import and export, reference data), and each feature is **layered** into routes, services and repositories. The UI and the API share one set of validation schemas, so the contract between them is written once.
 
 The guiding rule for every choice is: **pick the simplest design that meets the requirements for 10,000 employees, keeps salary data correct and private, and is easy to test and change.** Scale features such as microservices, a separate cache or background job queues are left out on purpose, with a clear path to add them if the numbers ever call for it.
+
+### Tech stack at a glance
+
+| Layer | Choice | Hosting (free plans) |
+|---|---|---|
+| Web app | React single page app with Vite and TypeScript; TanStack Query and Table; React Hook Form; shadcn/ui on Radix with Tailwind CSS; Recharts | Vercel, which also forwards `/api` to the API |
+| API | Node.js 24 LTS running TypeScript directly; Express 5; Zod; pino logs; Helmet | Render, Ohio |
+| Shared code | Zod schemas, types and rules used by both the web app and the API (npm workspaces) | |
+| Database | PostgreSQL with Drizzle ORM and versioned migrations | Neon, Ohio |
+| Sign-in and email | JWT in an httpOnly cookie, Argon2id passwords, Brevo for reset and invite emails | Brevo |
+| Exchange rates | Frankfurter (central bank rates), refreshed daily by a GitHub Actions job | GitHub Actions |
+| Files | ExcelJS and csv-parse for import and export | |
+| Tests and delivery | Vitest, Supertest, React Testing Library, PGlite, Playwright; ESLint and Prettier; GitHub Actions on every push | GitHub |
+
+Every choice, with its reasons and the alternatives, is in the [decisions](decisions-and-questions.md) document; the trade-offs are below.
 
 ## 2. Design structure
 
@@ -34,7 +49,8 @@ The guiding rule for every choice is: **pick the simplest design that meets the 
 6. **Record the decisions** with reasons and alternatives.
 7. **Write the high level design** with architecture, data model, API, flows, security, performance, testing and deployment.
 8. **Share the questions and act on the response.** The Incubyte team replied that everything in the brief is important and left the details to me. I answered the questions myself, researched employee fields and pay components for the four countries, and updated the requirements, decisions, design and plan.
-9. **Next:** a walking skeleton (one feature end to end, deployed), then features built test first, then the demo video.
+9. **Build in small steps.** A walking skeleton first (one feature end to end, deployed), then each feature test first on its own branch and pull request, following the [implementation plan](implementation-plan.md).
+10. **Harden and release.** A security and accessibility review, an end-to-end smoke test, a performance check on the live app, the production release, and light and dark themes.
 
 Each step has a document in the `docs` folder, so the reasoning is visible in the repository history.
 
@@ -53,7 +69,7 @@ Each table lists what was chosen, what else was considered, why the choice was m
 
 | Chosen | Alternatives | Why | Trade-off |
 |---|---|---|---|
-| TypeScript everywhere | JavaScript | Types catch mistakes early and document the code. Types are shared between UI and API. Matches the role. | A build step and some typing effort. |
+| TypeScript everywhere | JavaScript | Types catch mistakes early and document the code. Types are shared between UI and API. Matches the role. | Some typing effort. Node.js runs the API's TypeScript directly, so the API has no build step (D39); only the web app is built. |
 | Node.js 24 LTS | Node.js 22 LTS; Bun; Deno | Current long-term support release with built-in watch mode and environment file support. | Bun and Deno start faster, but have less hosting and library support. |
 
 ### 4.3 Backend framework and contract
@@ -76,7 +92,7 @@ Each table lists what was chosen, what else was considered, why the choice was m
 | Chosen | Alternatives | Why | Trade-off |
 |---|---|---|---|
 | Pay components catalogue, dated pay items, and pay changes that group them | One salary column; components as JSON on the employee; one row per employee per month | Matches pay made of several components, lets HR add components, keeps full history and supports future-dated changes. | More tables and joins than a single salary column, and every total must be calculated from the items. |
-| `current_pay_totals` view (annual total, gross pay and monthly equivalent per employee) | Store the totals on the employee row on every change | No duplicated data that can drift out of sync. Fast enough at this size with the right indexes. | Slightly slower reads than stored totals. Stored totals are the fallback if measurements require it. |
+| `current_pay_totals` view (annual total, gross pay and monthly equivalent per employee) | Store the totals on the employee row on every change | No duplicated data that can drift out of sync. Fast enough at this size: the live directory and dashboard take 50 to 150 ms on the server (D59). | Slightly slower reads than stored totals, since every request adds up the pay of every employee. Stored totals are the fallback if the data grows. |
 | Frequencies as a table with periods per year | A fixed list in code | A new frequency needs no code change, and every conversion follows one rule. | Slightly more setup than a hard-coded list. The meaning of "bi-" (every two) is a documented decision that HR must know. |
 | Employer contributions stored as amounts | Calculating them from rates per country | No yearly rule changes to maintain, which keeps the tool about data and insight. | Amounts must be updated by HR when rates change. |
 | One `change_log` table written by services in the same transaction as each change | A history table per entity; database triggers | One place to read who changed what, for every kind of record, with no database-specific code. | Old and new values are stored as JSON, which is harder to query, and every service must remember to write the log. Mitigated by one helper used by all services and tests that check the log. |
@@ -99,6 +115,7 @@ Each table lists what was chosen, what else was considered, why the choice was m
 | shadcn/ui on Radix | MUI; Ant Design; Mantine; Chakra UI | Accessible components whose code lives in the repository, so they are easy to adjust. | We own and maintain the copied component code. MUI would give more ready-made components with less control over styling. |
 | React Hook Form with Zod | Formik; TanStack Form | Few re-renders and direct reuse of the shared schemas. | Another library; plain controlled forms would be enough for very simple forms. |
 | Recharts | Chart.js; Apache ECharts; Nivo | Simple React components for the bar and distribution charts needed here. | Less suited to very large data sets or complex charts. ECharts would be the choice for heavy dashboards. |
+| A light theme by default (warm off-white with teal) and a dark theme, switched in the header (D61) | Following the device setting only; one theme | Calm and readable for pay data on any device, with every colour meeting WCAG AA contrast. The choice is remembered in the browser. | Two palettes to keep in step, and a small script to apply the saved theme before the page is drawn. |
 
 ### 4.7 Authentication, access and email
 
@@ -110,7 +127,7 @@ Each table lists what was chosen, what else was considered, why the choice was m
 | Two roles with country scope enforced in services and repositories (Q1) | PostgreSQL row-level security; hiding data only in the UI; a permissions library | One clear place to apply the rule, easy to test for every endpoint, and no database-specific setup. | Relies on every repository function taking the scope. Mitigated by making scope a required argument and testing both roles on every endpoint. Row-level security could be added later as a second layer. |
 | Out-of-scope records return 404 | Return 403 | Does not reveal that a record exists in another country. | Slightly harder to debug, since "not found" can mean "not allowed". |
 | Same-origin API through a Vercel rewrite | Cross-origin calls with CORS and cross-site cookies | The auth cookie stays first-party, which browsers allow, and no CORS setup is needed. | An extra hop through Vercel for each API call, and a dependency on Vercel's rewrite feature. |
-| In-memory rate limiting on auth routes | Rate limiting backed by Redis or the database | No extra service. Enough for one API instance. | Limits reset when the API restarts and are not shared across instances. Move to a shared store if the API is scaled out. |
+| In-memory rate limiting on sign-in, password reset, import and export | Rate limiting backed by Redis or the database | No extra service. Enough for one API instance. | Limits reset when the API restarts and are not shared across instances. Move to a shared store if the API is scaled out. |
 
 ### 4.8 Import and export (Q11)
 
@@ -119,7 +136,7 @@ Each table lists what was chosen, what else was considered, why the choice was m
 | ExcelJS for .xlsx, csv-parse for CSV, on the server | SheetJS; PapaParse; parsing files in the browser | Server-side parsing means the same checks run no matter which client uploads. ExcelJS reads and writes .xlsx and supports streaming. | Files travel to the server twice (validate, then commit). Browser parsing would give faster previews but duplicate the rules. |
 | Two calls: validate, then commit the same file | Store the upload and commit by ID | The API stays stateless and needs no file storage. | The file is uploaded and parsed twice. Fine for files of about 10,000 rows. |
 | All or nothing: save only when every row is valid | Save valid rows and report the rest | No half-loaded data that is hard to clean up. | One bad row blocks the whole file until it is fixed. |
-| Synchronous import | Background job with progress updates | Simple, with no queue or worker to run. | Very large files could hit request time limits. A job queue is the path for much larger files. |
+| Synchronous import | Background job with progress updates | Simple, with no queue or worker to run. | On the free API plan (a tenth of a CPU), checking a whole-organisation file takes over 10 seconds and holds the API, so import and export are paused on the live app until a job queue or a larger plan is in place (D59). |
 | Match rows to employees by employee code | Match by name or email | Employee code is the stable business key in the current sheets. | Rows without a code cannot update existing employees. |
 | Excel file with two sheets (employees, pay components); CSV holds one of them | One wide sheet with a column per component | Works when components differ by country and when HR adds new ones. | Two datasets to explain to users, and CSV needs two files for a full round trip. |
 
@@ -130,7 +147,7 @@ Each table lists what was chosen, what else was considered, why the choice was m
 | Paging, filtering, sorting and statistics in SQL | Load all rows into the browser and work there | Sends only what the screen shows. The database does what it is built for. | More API parameters to design and test. |
 | Offset paging | Keyset (cursor) paging | Simple, and supports jumping to any page. Fast enough for 10,000 rows. | Gets slower on very deep pages with millions of rows, and rows can shift between pages during edits. |
 | Trigram index for name search | PostgreSQL full-text search; a search engine such as Meilisearch or Elasticsearch | Fast partial matching on names with no extra service. | No ranking or typo tolerance beyond what trigrams give. |
-| Statistics computed on each request | Materialized views; pre-computed tables; a separate analytics store | Always up to date, with no refresh logic. Queries take milliseconds at this size. | Cost grows with data size. Materialized views refreshed after writes are the next step. |
+| Statistics computed on each request | Materialized views; pre-computed tables; a separate analytics store | Always up to date, with no refresh logic. Measured at 50 to 150 ms on the live API with 10,000 employees (D59). | Cost grows with data size. Materialized views refreshed after writes are the next step. |
 | No server-side cache. Caching in the browser (TanStack Query), on the CDN (app files) and with HTTP headers for reference data | Redis or an in-memory cache in the API | The whole data set fits in PostgreSQL's memory, so the database already acts as a cache. A server cache would risk showing old pay figures after an edit and adds a service to run. | If traffic or data grows a lot, some repeated queries will cost more than they would with a cache. Order of fixes: measure, then materialized views, then Redis. |
 | Peers are the same country, job title and employment type; flag above or below 20% of the peer median; skip groups under five (Q9) | Percentile bands; standard deviation scores | Easy to explain to HR and to test, and the median is not skewed by a few very high salaries. | A fixed limit does not suit every role. The limit is one configuration value, so it can be tuned. |
 
@@ -148,10 +165,10 @@ Each table lists what was chosen, what else was considered, why the choice was m
 |---|---|---|---|
 | Test first where practical, with a test pyramid | Tests after the code; mainly end-to-end tests | Many fast unit tests, fewer API tests, one end-to-end test. Matches the role and the brief. | Writing tests first takes discipline and some time up front. |
 | Vitest | Jest | Fast, works with Vite and TypeScript without extra setup, Jest-compatible API. | Slightly smaller ecosystem than Jest. |
-| PGlite (PostgreSQL in memory) for API and database tests | Testcontainers with Docker; mocking repositories; SQLite in tests | Real PostgreSQL behaviour, including medians and trigram search, without Docker. Tests stay fast and deterministic. | Not identical to the hosted server in every detail, such as connection pooling and some extensions. The deployed smoke test covers the gap. |
+| PGlite (PostgreSQL in memory) for API and database tests | Testcontainers with Docker; mocking repositories; SQLite in tests | Real PostgreSQL behaviour, including medians and trigram search, without Docker. Tests stay fast and deterministic. | Not identical to the hosted server in every detail, such as connection pooling and some extensions. The Playwright smoke tests run against a real PostgreSQL server to cover the gap. |
 | Supertest for HTTP tests | Calling handlers directly | Tests go through routing, middleware and validation like real requests. | Slightly slower than calling functions directly. |
 | React Testing Library | Enzyme; snapshot-only tests | Tests the UI the way a user sees it. | Some internal states are harder to reach. |
-| Playwright for one smoke test | Cypress; no end-to-end test | Confirms the real app works end to end in a browser. Matches the role. | Slower and more brittle than unit tests, so kept to one main path. |
+| Playwright for a smoke test of the main path (D58) | Cypress; no end-to-end test | Confirms the built app works end to end in a browser: sign in, search, a pay change, the dashboard, the currency and theme switches. Runs in its own CI job with a PostgreSQL service. | Slower and more brittle than unit tests, so kept to the main path. |
 
 ### 4.12 Repository, tooling and delivery
 
@@ -159,7 +176,7 @@ Each table lists what was chosen, what else was considered, why the choice was m
 |---|---|---|---|
 | One repository with npm workspaces | pnpm workspaces; Turborepo; Nx; separate repositories | Shares the schema package with no publishing, and one history shows the whole change. npm needs no extra install. | No build caching across packages. Turborepo or Nx would add that for larger codebases. |
 | ESLint and Prettier | Biome | Standard, well documented, many plugins. | Two tools instead of one, and slower than Biome. |
-| GitHub Actions: lint, type check, tests and build on every push | Other CI services; local checks only | Built into GitHub, free for public repositories, visible to reviewers. | Tied to GitHub. |
+| GitHub Actions: lint, type check, tests and build on every push, and the smoke test in a second job | Other CI services; local checks only | Built into GitHub, free for public repositories, visible to reviewers. | Tied to GitHub. |
 | Vercel for the UI, Render for the API, Neon for PostgreSQL | One container on Render, Railway or Fly.io; AWS (S3, CloudFront, ECS or Lambda, RDS); Supabase | Free tiers, deploys from Git, and each service suits its part. | Three providers to configure. Render's free tier sleeps when idle, so the first request can be slow. Neon pauses when idle too. Keep the API and the database in the same region. |
 | Migrations run before each API release | Manual schema changes | Every environment has the same schema, recorded in the repository. | Migrations must be written so the old and new API versions can both run during a release. |
 | Structured logs with pino and a health endpoint | OpenTelemetry tracing; Sentry error tracking | Enough to trace a request and let the host check health. | No error alerts or dashboards. Sentry is a quick addition if needed. |
@@ -199,6 +216,8 @@ Each table lists what was chosen, what else was considered, why the choice was m
 | Large or frequent imports | Background jobs with progress updates, and file storage for uploads |
 | Heavy reporting needs | A read replica or a separate analytics store |
 | Features owned by different teams | Split a module, such as import and export, into its own service along the existing module boundary |
+
+New features, such as monthly pay tracking, review cycles and pay bands, are listed in [possible improvements](possible-improvements.md).
 
 ## 7. Glossary
 

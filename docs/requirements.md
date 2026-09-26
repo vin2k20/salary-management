@@ -1,6 +1,6 @@
 # Salary Management for ACME HR: Requirements
 
-Author: Vineet Kumar | Date: 24 Sep 2026 | Version: 1.1 (based on the answered clarification questions and follow-up decisions)
+Author: Vineet Kumar | Date: 26 Sep 2026 | Version: 1.2 (based on the answered clarification questions and follow-up decisions; import and export paused on the free hosting)
 
 ## Goal
 

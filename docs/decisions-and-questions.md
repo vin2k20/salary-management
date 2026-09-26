@@ -1,6 +1,6 @@
 # Salary Management for ACME HR: Decisions
 
-Author: Vineet Kumar | Date: 24 Sep 2026 | Version: 1.1
+Author: Vineet Kumar | Date: 26 Sep 2026 | Version: 1.2 (every decision up to the release)
 
 This document records the decisions for the application, with reasons and alternatives. The clarification questions were shared with the Incubyte team, who replied that everything in the brief is important and left the details to me. I then answered the questions myself; the answers are in `clarification-questions.md`, and the decisions below follow them. The details decided on top of the answers (D24 to D36) were reviewed and confirmed on 24 Sep 2026.
 

@@ -780,7 +780,7 @@ The clarification questions were shared with the Incubyte team. The team replied
 | 19 | Done | [#21](https://github.com/vin2k20/salary-management/pull/21) | 25 Sep 2026 | Playwright smoke test (D58) in its own CI job |
 | 20 | Done | [#22](https://github.com/vin2k20/salary-management/pull/22) | 25 Sep 2026 | Timings within target (D59); import and export paused on the free hosting |
 | 21 | Done | [#23](https://github.com/vin2k20/salary-management/pull/23) | 26 Sep 2026 | Release checked by a walk-through (D60); demo password shared separately |
-| 22 | Not started | | | |
+| 22 | Done | [#24](https://github.com/vin2k20/salary-management/pull/24) | 26 Sep 2026 | Light theme by default, dark theme and a switch (D61) |
 | 23 | Not started | | | |
 
 ## 7. Change log
