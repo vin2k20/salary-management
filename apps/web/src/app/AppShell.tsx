@@ -41,7 +41,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           className={({ isActive }) =>
             cn(
               'rounded-md px-3 py-1.5 text-sm whitespace-nowrap text-muted-foreground hover:text-foreground',
-              isActive && 'bg-secondary text-foreground',
+              isActive && 'bg-secondary text-secondary-foreground',
             )
           }
         >
@@ -59,7 +59,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       >
         Skip to main content
       </a>
-      <header className="border-b">
+      <header className="border-b bg-card">
         {/* Title and account controls on the first row, the navigation on its own row below,
             in the same order for the keyboard as on screen. */}
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-2 px-4 pt-3 sm:px-6">

@@ -1,46 +1,51 @@
 @import 'tailwindcss';
 
-/* Theme tokens in the shadcn/ui style, with a dark variant that follows the system setting. */
+/*
+ * Theme tokens in the shadcn/ui style. The light theme is the default: a warm off-white page with
+ * white cards, sand for quiet areas, teal for actions and charts, and mint for selected items. The
+ * dark theme applies when the page has data-theme="dark" (set by public/theme.js and the header
+ * switch). Every text colour has at least 4.5:1 contrast on the surfaces it sits on (D61).
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.52 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  color-scheme: light;
+  --background: #faf8f5;
+  --foreground: #1c2530;
+  --card: #ffffff;
+  --card-foreground: #1c2530;
+  --primary: #0f6b63;
+  --primary-foreground: #ffffff;
+  --secondary: #e3f0ed;
+  --secondary-foreground: #134e4a;
+  --muted: #f2eee8;
+  --muted-foreground: #5a6573;
+  --destructive: #b42318;
+  --border: #e6e0d7;
+  --input: #cfc7bb;
+  --ring: #0f6b63;
   --radius: 0.625rem;
-  /* Chart marks: one blue, with a lighter step for whiskers (validated against the surface). */
-  --chart-1: #2a78d6;
-  --chart-1-soft: #86b6ef;
+  /* Chart marks: one teal, with a lighter step for whiskers. */
+  --chart-1: #0f766e;
+  --chart-1-soft: #8dcbc1;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: #3987e5;
-    --chart-1-soft: #184f95;
-  }
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --background: #111417;
+  --foreground: #eceff2;
+  --card: #1a1e23;
+  --card-foreground: #eceff2;
+  --primary: #5cc3b5;
+  --primary-foreground: #06201d;
+  --secondary: #1d3431;
+  --secondary-foreground: #d3efe9;
+  --muted: #232930;
+  --muted-foreground: #a2acb7;
+  --destructive: #f97066;
+  --border: #2a3036;
+  --input: #3a424a;
+  --ring: #5cc3b5;
+  --chart-1: #3fb8a9;
+  --chart-1-soft: #1e5f58;
 }
 
 @theme inline {
@@ -70,5 +75,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    /* Native checkboxes and radio buttons in the theme's teal. */
+    accent-color: var(--primary);
   }
 }

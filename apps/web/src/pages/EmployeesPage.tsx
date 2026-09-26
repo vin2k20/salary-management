@@ -58,7 +58,7 @@ export function EmployeesPage() {
       {list.isPending && <p className="mt-6 text-sm text-muted-foreground">Loading employees...</p>}
 
       {data?.total === 0 && (
-        <div className="mt-6 rounded-lg border p-6 text-sm">
+        <div className="mt-6 rounded-lg border bg-card p-6 text-sm">
           <p>No employees match these filters.</p>
           {hasFilters && (
             <Button size="sm" variant="secondary" className="mt-2" onClick={clearFilters}>

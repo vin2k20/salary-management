@@ -28,7 +28,7 @@ export function StatTable({
   className?: string;
 }) {
   return (
-    <div className={cn('overflow-x-auto rounded-lg border', className)}>
+    <div className={cn('overflow-x-auto rounded-lg border bg-card', className)}>
       <table aria-label={label} className="w-full text-sm">
         <thead className="sticky top-0 bg-muted text-muted-foreground">
           <tr>
