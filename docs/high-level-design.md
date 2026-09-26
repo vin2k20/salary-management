@@ -1,10 +1,10 @@
 # Salary Management for ACME HR: High Level Design
 
-Author: Vineet Kumar | Date: 24 Sep 2026 | Version: 0.3 (based on requirements v1.1, the answered clarification questions and the follow-up decisions)
+Author: Vineet Kumar | Date: 26 Sep 2026 | Version: 1.0 (based on requirements v1.2, the answered clarification questions and the follow-up decisions; updated to match the released application)
 
 ## 1. Purpose and scope
 
-This document describes how the salary management application will be built: the main parts, how they talk to each other, the data model, the API, access rules, security, testing and deployment. It covers every feature in the requirements: login with reset and invites, two HR roles with country scope, employees, pay components with frequencies and history, daily exchange rates with a USD toggle, the dashboard, import and export, and seed data for 10,000 employees in four countries.
+This document describes how the salary management application is built: the main parts, how they talk to each other, the data model, the API, access rules, security, testing and deployment. It covers every feature in the requirements: login with reset and invites, two HR roles with country scope, employees, pay components with frequencies and history, daily exchange rates with a USD toggle, the dashboard, import and export, and seed data for 10,000 employees in four countries.
 
 Design goals:
 
@@ -41,7 +41,7 @@ The browser calls the API under `/api` on the same domain as the UI. Vercel forw
 | New employee | Add an employee with starting pay components | Both roles, within scope |
 | Pay components | View the component catalogue and add or deactivate components | Global HR for all countries, country HR for their country |
 | Users | Add users, set role and country, resend invites, deactivate | Global HR only |
-| Import and export | Upload .xlsx or CSV with a preview and row errors; download the current view | Both roles, within scope |
+| Import and export | Upload .xlsx or CSV with a preview and row errors; download the current view (built, and paused on the free hosting, D59) | Both roles, within scope |
 
 Across the app:
 
@@ -266,7 +266,7 @@ Tests are written before the code where practical, use fixed test data, and do n
 | Environment | Web | API | Database | Email | Exchange rates |
 |---|---|---|---|---|---|
 | Local | Vite dev server, with a proxy for `/api` | `node --watch` | Local PostgreSQL or a Neon development branch | Links logged to the console, or a Brevo test key | Seeded rates; manual refresh |
-| CI | Build only | Tests with PGlite | PGlite in memory | Fake sender | Fake client |
+| CI | Build, and Playwright smoke tests on the built app | Tests with PGlite; the smoke tests start the API | PGlite in memory; a PostgreSQL service for the smoke tests | Fake sender | Fake client |
 | Production | Vercel | Render | Neon | Brevo | Daily GitHub Actions job and Frankfurter |
 
 The API and the database run in the same region: Render in Ohio and Neon in AWS us-east-2 (D40).
@@ -306,5 +306,6 @@ The clarification questions were shared with the Incubyte team, who replied that
 - **A totals view instead of stored totals** avoids duplicated data. Stored totals are the fallback if measurements show a need.
 - **Stored employer contributions** instead of calculated ones keep the tool free of yearly rule changes. A rules module could calculate them later.
 - **Daily rates** match the answer to Q5. More frequent updates would need a paid rate source and add little for pay reporting.
-- **Synchronous import** is fine for files of about 10,000 employees. Much larger files would move to a background job.
+- **Synchronous import** holds the free API for over 10 seconds on a whole-organisation file, so import and export are paused on the live app (D59). A background job, or a larger API plan with batched checks, switches them back on.
 - **Pay bands, compa-ratio and review cycles** would build on the same components, job titles and peer groups.
+- **More improvements**, such as monthly pay tracking, reminders, more roles and payroll integrations, are in `possible-improvements.md`.
